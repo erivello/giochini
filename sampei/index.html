@@ -94,6 +94,7 @@
    ========================================================= */
 
 const W = 960, H = 540, WATER = 322;
+const HERO = 'Tommaso';   // il nome del protagonista
 
 /* ---------------- DATI: luoghi e pesci ---------------- */
 const PLACES = [
@@ -589,6 +590,12 @@ function drawKid(st){
   ctx.beginPath(); ctx.arc(hx, hy-4, 16, Math.PI*1.05, Math.PI*1.95); ctx.closePath(); ctx.fill(); ctx.stroke();
   ctx.beginPath(); ctx.ellipse(hx+16, hy-6, 12, 4, -.1, 0, Math.PI*2); ctx.fill(); ctx.stroke();
   ctx.fillStyle = '#f5b82e'; ctx.beginPath(); ctx.arc(hx-2, hy-19, 3, 0, Math.PI*2); ctx.fill();
+  // targhetta col nome
+  ctx.font = '800 15px ' + getComputedStyle(document.body).fontFamily; ctx.textAlign = 'center';
+  const tw = ctx.measureText(HERO).width + 16;
+  ctx.fillStyle = '#fffaf0'; ctx.strokeStyle = '#1d2b36'; ctx.lineWidth = 2;
+  roundRect(hx - tw/2, hy - 50, tw, 20, 10); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#1d2b36'; ctx.fillText(HERO, hx, hy - 35);
 
   // canna
   const back = {x: hand.x - 18, y: hand.y + 14};
@@ -764,6 +771,7 @@ function showCard(){
       <div>${isNew ? '<span class="badge">NUOVO!</span>' : ''}${isRecord ? '<span class="badge red">RECORD!</span>' : ''}${fish.legend ? '<span class="badge">⭐ LEGGENDARIO ⭐</span>' : ''}</div>
       <div id="cardFish"></div>
       <h2>${fish.name}</h2>
+      ${fish.legend ? `<p><b>${HERO} ha preso il pesce leggendario!</b></p>` : isNew ? `<p>Nuova specie nell'album di ${HERO}!</p>` : ''}
       <div class="kg">⚖️ ${kg.toLocaleString('it-IT')} kg &nbsp; · &nbsp; 🪙 ${value}</div>
       <p class="fact">💡 ${fish.fact}</p>
       <div class="row">
@@ -776,8 +784,8 @@ function showCard(){
     const e = save.album[fish.id] || {n:0, best:0};
     e.n++; e.best = Math.max(e.best, kg); save.album[fish.id] = e;
   };
-  document.getElementById('keep').onclick = () => { rec(); save.coins += value; SFX.coin(); persist(); closePanel(); setState('idle'); say(`+${value} 🪙  Che pescata!`); };
-  document.getElementById('free').onclick = () => { rec(); save.coins += relValue; save.released++; SFX.coin(); persist(); closePanel(); setState('idle'); say('💙 Bravo! Il pesce torna a nuotare libero.'); };
+  document.getElementById('keep').onclick = () => { rec(); save.coins += value; SFX.coin(); persist(); closePanel(); setState('idle'); say(`+${value} 🪙  Che pescata, ${HERO}!`); };
+  document.getElementById('free').onclick = () => { rec(); save.coins += relValue; save.released++; SFX.coin(); persist(); closePanel(); setState('idle'); say(`💙 Bravo ${HERO}! Il pesce torna a nuotare libero.`); };
 }
 
 function showAlbum(){
@@ -839,7 +847,7 @@ function showPlaces(){
 function showIntro(){
   openPanel(`
     <h2>🎣 Lenza d'Oro</h2>
-    <p>Ciao! Sei <b>Tobia</b>, giovane pescatore. Il tuo sogno? Diventare il più grande pescatore del mondo e catturare i <b>pesci leggendari</b>!</p>
+    <p>Ciao <b>${HERO}</b>! Sei un giovane pescatore. Il tuo sogno? Diventare il più grande pescatore del mondo e catturare i <b>pesci leggendari</b>!</p>
     <div class="steps">
       <div class="step"><div class="e">👆</div><b>1. Lancia</b><br>Tieni premuto e lascia quando la barra è piena. Più lontano lanci, più trovi pesci rari!</div>
       <div class="step"><div class="e">👀</div><b>2. Aspetta</b><br>Quando il galleggiante va <b>sotto</b> e compare il <b>!</b>, clicca subito!</div>
