@@ -504,10 +504,11 @@ let tip = V(), tipPrev = V();
 function rebuildRod(ten){
   const back = HAND.clone().add(V(-.06, -.25, .4));
   let tipT, mid;
-  if (S === 'charge'){ tipT = HAND.clone().add(V(.15, 2.5, 1.8)); mid = HAND.clone().lerp(tipT, .5); }
+  if (S === 'charge'){ tipT = HAND.clone().add(V(.15 + aim*.9, 2.7, .9)); mid = HAND.clone().lerp(tipT, .5); }
   else {
     const bend = ten;   // 0..100
-    tipT = HAND.clone().add(V(.55 + (bob.x - .55) * bend/600, 2.3 - bend*.016, -2.2 - bend*.004));
+    const ax = (S === 'idle') ? aim*1.3 : (bob.x - .55) * bend/600;
+    tipT = HAND.clone().add(V(.55 + ax, 2.3 - bend*.016, -2.2 - bend*.004));
     mid = HAND.clone().lerp(tipT, .5).add(V(0, .25 + bend*.004, -.1));
   }
   // vibrazione
@@ -648,7 +649,18 @@ function press(){
   else if (S === 'bite') startReel();
 }
 function release(){ holding = false; if (S === 'charge') doCast(); }
-cv.addEventListener('pointerdown', e => { e.preventDefault(); press(); });
+/* Mira: trascinando a destra/sinistra mentre carichi il lancio (o con le frecce ← →) */
+let aim = 0, aimStartX = 0, aimStart = 0, aimKeys = 0;
+const AIM_MAX = .6;   // circa 35 gradi per lato
+function aimDir(){ return aim * AIM_MAX; }
+function landingPoint(pw){ const d = 5 + pw*15, a = aimDir(); return V(.4 + Math.sin(a)*d, 0, -Math.cos(a)*d); }
+cv.addEventListener('pointerdown', e => { e.preventDefault(); aimStartX = e.clientX; aimStart = aim; press(); });
+window.addEventListener('pointermove', e => {
+  if (!holding || S !== 'charge') return;
+  aim = clamp(aimStart + (e.clientX - aimStartX) / (wrap.getBoundingClientRect().width * .3), -1, 1);
+});
+window.addEventListener('keydown', e => { if (e.code === 'ArrowLeft') aimKeys = -1; if (e.code === 'ArrowRight') aimKeys = 1; });
+window.addEventListener('keyup', e => { if ((e.code === 'ArrowLeft' && aimKeys < 0) || (e.code === 'ArrowRight' && aimKeys > 0)) aimKeys = 0; });
 window.addEventListener('pointerup', release);
 window.addEventListener('pointercancel', release);
 cv.addEventListener('contextmenu', e => e.preventDefault());
@@ -657,7 +669,7 @@ window.addEventListener('keyup', e => { if (e.code === 'Space'){ e.preventDefaul
 
 function doCast(){
   castFrom.copy(tip);
-  castTo.set(rand(-2, 2) + power*1.2, 0, -(5 + power*15));
+  castTo.copy(landingPoint(power)); castTo.x += rand(-.4, .4);   // un pizzico di imprecisione
   SFX.cast(); setState('cast');
 }
 
@@ -833,7 +845,7 @@ function updateScene(dt){
 
   // Tommaso: gambe che dondolano, testa che segue il galleggiante, salto di gioia
   KID.legs.forEach((l, i) => l.rotation.x = Math.sin(now*2 + i*Math.PI) * .25);
-  const lookAt = (S === 'idle' || S === 'charge') ? V(0, 0, -10) : bob;
+  const lookAt = (S === 'idle' || S === 'charge') ? landingPoint(.6) : bob;
   KID.head.rotation.y = lerp(KID.head.rotation.y, clamp(Math.atan2(-(lookAt.x - 0), -(lookAt.z - 0)) , -.6, .6), dt*4);
   KID.head.rotation.x = S === 'reel' ? -.15 : 0;
   kid.position.y = seatY - .75 + (S === 'caught' ? Math.abs(Math.sin(now*8)) * .15 : 0);
@@ -846,8 +858,8 @@ function updateScene(dt){
   // galleggiante e filo
   let lineEnd = null, sag = .6;
   if (S === 'idle' || S === 'charge' || S === 'lost'){
-    bob.copy(tip).add(V(Math.sin(now*2)*.05, S === 'lost' ? -.6 : -1.1, 0));
-    bobber.visible = S !== 'lost';
+    bob.copy(tip).add(V(Math.sin(now*2)*.05, S === 'lost' ? -.6 : S === 'charge' ? -.45 : -1.1, 0));
+    bobber.visible = S !== 'lost' && S !== 'charge';
     lineEnd = bob.clone().add(V(0, .3, 0)); sag = 0;
   } else {
     bobber.visible = true;
@@ -898,7 +910,7 @@ function updateScene(dt){
 
   // telecamera: segue la lotta e trema
   const fightCam = S === 'wait' || S === 'bite' || S === 'reel';
-  let lookWant = fightCam ? V(bob.x*.7, .2, Math.min(-6, bob.z*.85)) : LOOK_BASE;
+  let lookWant = fightCam ? V(bob.x*.7, .2, Math.min(-6, bob.z*.85)) : LOOK_BASE.clone().add(V(aim*4, 0, 0));
   if (S === 'reel' && R.mode === 'jump') lookWant = V(bob.x*.9, 1.5, bob.z);
   camLook.lerp(lookWant, dt*2);
   // durante la lotta la telecamera si avvicina e si sposta verso il pesce
@@ -933,7 +945,7 @@ function hintText(){
   const key = matchMedia('(pointer:fine)').matches ? 'Tieni premuto (o SPAZIO)' : 'Tieni premuto';
   switch (S){
     case 'idle': return `🎣 ${key} per caricare il lancio, poi lascia!`;
-    case 'charge': return 'Lascia andare per lanciare! Più lontano = pesci più rari ⭐';
+    case 'charge': return matchMedia('(pointer:fine)').matches ? '↔️ Muovi il mouse (o ← →) per mirare, poi lascia!' : '↔️ Trascina a destra o sinistra per mirare, poi lascia!';
     case 'cast': return 'Vola!';
     case 'wait': return '👀 Aspetta... quando il galleggiante va SOTTO, clicca!';
     case 'bite': return '❗ ABBOCCA! CLICCA SUBITO!';
@@ -1112,7 +1124,7 @@ function showIntro(){
     <h2>🎣 Lenza d'Oro 3D</h2>
     <p>Ciao <b>${HERO}</b>! Sei un giovane pescatore. Il tuo sogno? Diventare il più grande pescatore del mondo e catturare i <b>pesci leggendari</b>!</p>
     <div class="steps">
-      <div class="step"><div class="e">👆</div><b>1. Lancia</b><br>Tieni premuto e lascia quando la barra è piena. Più lontano lanci, più trovi pesci rari!</div>
+      <div class="step"><div class="e">👆</div><b>1. Lancia</b><br>Tieni premuto e <b>trascina a destra o sinistra</b> per mirare. Lascia quando la barra è piena: più lontano lanci, più trovi pesci rari!</div>
       <div class="step"><div class="e">👀</div><b>2. Aspetta</b><br>Quando il galleggiante va <b>sotto</b> e compare il <b>!</b>, clicca subito!</div>
       <div class="step"><div class="e">🌀</div><b>3. Recupera</b><br>Tieni premuto per tirare. Se la tensione va nel <b style="color:#e74c3c">rosso</b>, <b>molla</b> o si rompe il filo!</div>
     </div>
@@ -1135,7 +1147,28 @@ document.querySelector('.hud').addEventListener('pointerdown', e => e.stopPropag
 /* ---------------- LOOP ---------------- */
 buildEnv(place());
 let last = performance.now();
+/* Bersaglio sull'acqua: scia di puntini + anello dove cadrà il galleggiante */
+const aimDots = [], aimDotMat = new THREE.MeshBasicMaterial({ color:0xffd84a, transparent:true, opacity:.9, depthWrite:false });
+for (let i=0;i<14;i++){ const d = new THREE.Mesh(new THREE.CircleGeometry(.12, 10), aimDotMat); d.rotation.x = -Math.PI/2; scene.add(d); aimDots.push(d); }
+const aimRing = new THREE.Mesh(new THREE.RingGeometry(.9, 1.2, 28), new THREE.MeshBasicMaterial({ color:0xffd84a, transparent:true, opacity:.95, depthWrite:false }));
+aimRing.rotation.x = -Math.PI/2; scene.add(aimRing);
+function updateAim(dt){
+  if ((S === 'idle' || S === 'charge') && aimKeys && !uiOpen) aim = clamp(aim + aimKeys*dt*1.3, -1, 1);
+  const show = S === 'charge' || S === 'idle';
+  aimDotMat.opacity = S === 'charge' ? .9 : .35;
+  aimRing.material.opacity = S === 'charge' ? .95 : .35;
+  const pw = S === 'charge' ? power : .5;
+  const end = landingPoint(pw), start = V(.4, 0, -1.6);
+  aimDots.forEach((d, i) => {
+    const t = (i + 1) / (aimDots.length + 1);
+    d.visible = show; d.position.lerpVectors(start, end, t); d.position.y = waveH(d.position.x, d.position.z, now) + .04;
+  });
+  aimRing.visible = show; aimRing.position.set(end.x, waveH(end.x, end.z, now) + .05, end.z);
+  aimRing.scale.setScalar((1 + Math.sin(now*6)*.08) * (.7 + pw*.6));
+}
+
 function step(dt){
+  updateAim(dt);
   if (!uiOpen || S === 'caught') update(uiOpen ? 0 : dt);
   updateScene(dt);
   renderer.render(scene, camera);
@@ -1153,7 +1186,7 @@ requestAnimationFrame(frame);
 
 // aiuto per i test dal browser
 window.__game = { get state(){ return S; }, get R(){ return R; }, get fish(){ return fish; }, get kg(){ return kg; }, save,
-  press, release, force(id){ forceFish = id; }, freeze(v){ frozen = v; }, tick(n=1){ for (let i=0;i<n;i++) step(1/60); } };
+  press, release, force(id){ forceFish = id; }, freeze(v){ frozen = v; }, setAim(v){ aim = v; }, get castTo(){ return castTo; }, tick(n=1){ for (let i=0;i<n;i++) step(1/60); } };
 </script>
 </body>
 </html>
