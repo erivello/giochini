@@ -179,7 +179,7 @@ table.rank td.p{width:36px;font-size:20px;text-align:center}
 </div>
 <div id="vetBottom" class="hidden">
   <div id="vMsg"></div>
-  <div class="hint">💦 Tocca i punti rossi per rinfrescare Red. La mamma ti aiuta!</div>
+  <div class="hint">💦 Tocca i punti rossi per rinfrescare Red. Mamma Silvia ti aiuta!</div>
   <div class="btns">
     <button id="vDrink" class="btn water">💧 Mamma, acqua!</button>
     <button id="vPresent" class="btn alt">🩺 Dal veterinario</button>
@@ -206,7 +206,7 @@ table.rank td.p{width:36px;font-size:20px;text-align:center}
         <li>⏱ La giuria controlla la media al <b>controllo a 4 km dall'arrivo</b> e al traguardo. Fino a +0,5 km/h oltre il massimo prendi una penalità.</li>
         <li>🚧 Le <b>strade</b> si attraversano <b>al passo</b>.</li>
         <li>👀 Nel <b>tratto a vista</b> prima del traguardo: solo trotto o galoppo, niente passo.</li>
-        <li>🩺 Al <b>vet gate</b> hai <b>15 minuti</b> per presentare Red con il cuore a <b>64 o meno</b>. La mamma ti aiuta a rinfrescarlo.</li>
+        <li>🩺 Al <b>vet gate</b> hai <b>15 minuti</b> per presentare Red con il cuore a <b>64 o meno</b>. Mamma Silvia ti aiuta a rinfrescarlo.</li>
         <li>🏅 Il punteggio finale:
           <div class="formula">(media − media minima) × 100 ÷ (battito finale + 2 per ogni minuto di attesa)</div>
           Più vai vicina alla media massima e più il cuore di Red è basso, più punti fai!</li>
@@ -254,7 +254,8 @@ function fmt(s){s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.fl
 function rr(x,X,Y,W,H,R){x.beginPath();x.moveTo(X+R,Y);x.arcTo(X+W,Y,X+W,Y+H,R);x.arcTo(X+W,Y+H,X,Y+H,R);x.arcTo(X,Y+H,X,Y,R);x.arcTo(X,Y,X+W,Y,R);x.closePath();}
 function textTex(text,w,h,bg,fg,font){const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');if(bg){x.fillStyle=bg;rr(x,0,0,w,h,Math.min(w,h)*0.18);x.fill();}x.fillStyle=fg;x.font=font;x.textAlign='center';x.textBaseline='middle';x.fillText(text,w/2,h/2+h*0.04);const t=new THREE.CanvasTexture(c);t.anisotropy=4;return t;}
 function labelSprite(text,color,w=3.4){const c=document.createElement('canvas');c.width=320;c.height=72;const x=c.getContext('2d');x.fillStyle='rgba(255,255,255,.9)';rr(x,4,6,312,60,28);x.fill();
-  x.fillStyle=color;x.font='800 34px "Baloo 2", sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(text,160,38);
+  let fs=34;do{x.font='800 '+fs+'px "Baloo 2", sans-serif';}while(x.measureText(text).width>290&&--fs>18);
+  x.fillStyle=color;x.textAlign='center';x.textBaseline='middle';x.fillText(text,160,38);
   const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthWrite:false}));s.scale.set(w,w*0.225,1);return s;}
 
 // ---------------- categories (FISE regolarità)
@@ -464,8 +465,8 @@ const people=[];
 const ASSIST=[0.33,0.62].map(f=>({d:f*L,off:5.9}));
 for(const t of ASSIST){const g=new THREE.Group();const fr=new THREE.Mesh(new THREE.BoxGeometry(1.1,0.7,3.2),lam(0x8a5a32));fr.position.y=0.35;g.add(fr);
   const w=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.05,3),lam(0x3aa0ff));w.position.y=0.68;g.add(w);place(g,t.d,t.off);
-  const m=makePerson({shirt:0xe84f9a,pony:true,hair:0x5a3a22,bucket:true,label:'Mamma ❤️'});place(m.g,t.d-2.8,6.6,-Math.PI/2);m.wave=2;people.push(m);t.mom=m;}
-const vetMom=makePerson({shirt:0xe84f9a,pony:true,hair:0x5a3a22,bucket:true,label:'Mamma ❤️'});
+  const m=makePerson({shirt:0xe84f9a,pony:true,hair:0x5a3a22,bucket:true,label:'Mamma Silvia ❤️'});place(m.g,t.d-2.8,6.6,-Math.PI/2);m.wave=2;people.push(m);t.mom=m;}
+const vetMom=makePerson({shirt:0xe84f9a,pony:true,hair:0x5a3a22,bucket:true,label:'Mamma Silvia ❤️'});
 place(vetMom.g,7.2,0.6,Math.PI);people.push(vetMom);
 
 // per-race course: ring-coloured markers, km signs, speed control, "tratto a vista"
@@ -679,6 +680,7 @@ function arriveFinishLine(){
   enterVet();
 }
 function enterVet(){
+  show('count',false);cdT=0;
   mode='vet';P.arriveT=RT;P.arriveHR=P.hr;P.kmh=0;P.gait=0;P.drank=false;P.presents=0;P.momT=0;
   const last=P.phase+1>=C.loops;
   $('vPhase').textContent=last?'Visita finale':`Fase ${P.phase+1}`;$('vMsg').textContent='';$('vDrink').disabled=false;
@@ -687,7 +689,7 @@ function enterVet(){
   toast(last?'Ultima visita: hai una sola presentazione! 🩺':'Rinfresca Red e presentalo entro 15 minuti 🩺',null,0,3);
 }
 $('vDrink').addEventListener('click',()=>{if(mode!=='vet'||P.drank)return;P.drank=true;P.hyd=Math.min(100,P.hyd+45);P.hr=Math.max(42,P.hr-2);$('vDrink').disabled=true;swoosh();
-  $('vMsg').textContent='Gluglu! La mamma ha fatto bere Red 💧';setTimeout(()=>{if($('vMsg').textContent.startsWith('Gluglu'))$('vMsg').textContent='';},1800);});
+  $('vMsg').textContent='Gluglu! Mamma Silvia ha fatto bere Red 💧';setTimeout(()=>{if($('vMsg').textContent.startsWith('Gluglu'))$('vMsg').textContent='';},1800);});
 function vetMinutes(){return(RT-P.arriveT)/60;}
 function extraBeats(){const m=Math.floor(vetMinutes());return 2*Math.max(0,m-C.grace);}
 $('vPresent').addEventListener('click',()=>{
@@ -709,7 +711,7 @@ $('vPresent').addEventListener('click',()=>{
   mode='vetResult';show('vetTop',false);show('vetBottom',false);
   $('vresText').innerHTML=`Battito di Red: <b>${hr} bpm</b> 💚 · presentato dopo <b>${Math.max(1,Math.round(mins))} min</b>`+
     (C.type==='reg'?`<br>Media della fase: <b>${it(avg,2)} km/h</b> ${avg>=C.vmin&&avg<=C.vmax?'✅':'⚠️'}`:'')+
-    `<br><br>⏸ <b>Sosta obbligatoria: 40 minuti.</b><br>La mamma si prende cura di Red: acqua, carote e coccole 🥕`;
+    `<br><br>⏸ <b>Sosta obbligatoria: 40 minuti.</b><br>Mamma Silvia si prende cura di Red: acqua, carote e coccole 🥕`;
   $('vresBtn').textContent=`🐎 Riparti per la fase ${P.phase+2}!`;show('vres',true);
 });
 $('vresBtn').addEventListener('click',()=>{
@@ -759,7 +761,7 @@ function finishRace(){
     $('fSub').innerHTML=`${C.km*C.loops} km in <b>${fmt(t)}</b>`;
   }
   $('fTitle').textContent=pos===1?'🏆 HAI VINTO, AGATA!':pos<=3?'🎉 Sul podio!':'🏁 Arrivata al traguardo!';
-  $('fSub').innerHTML+=pos>1?'<br>Arrivare è già vincere! Riprova per il gradino più alto 💪':'<br>Red e la mamma sono fierissimi di te ❤️';
+  $('fSub').innerHTML+=pos>1?'<br>Arrivare è già vincere! Riprova per il gradino più alto 💪':'<br>Red e mamma Silvia sono fierissimi di te ❤️';
   if(P.energy>=55&&P.hyd>=45)aw.unshift('🏅 <b>Best Condition</b>: Red è arrivato in forma perfetta!');
   if(P.pen===0&&P.stumbles===0)aw.push('✨ Percorso pulito: nessuna penalità e nessun ostacolo urtato!');
   if(P.penNotes.length)aw.push('📝 Penalità: '+P.penNotes.join(' · '));
@@ -789,10 +791,10 @@ function updatePlayer(dt){
   P.hyd=clamp(P.hyd-(0.08+0.024*k)*dt,0,100);
   // assistance points with mamma
   for(const t of ASSIST){const dd=t.d-d;
-    if(dd>12&&dd<75&&P.hyd<90)toast('💕 La mamma ti aspetta a destra con l\'acqua! Accosta al passo','as'+t.d,25,3);
+    if(dd>12&&dd<75&&P.hyd<90)toast('💕 Mamma Silvia ti aspetta a destra con l\'acqua! Accosta al passo','as'+t.d,25,3);
     if(Math.abs(dd)<5&&P.off>2&&P.kmh<8.5){P.hyd=Math.min(100,P.hyd+26*dt);P.hr-=dt*3;t.mom.wave=3;
       if(Math.random()<dt*4){t.mom.g.getWorldPosition(wp);wp.y+=1.4;splash(wp,4);}
-      toast('La mamma rinfresca Red e lo fa bere 💦','drink',4,1.6);}}
+      toast('Mamma Silvia rinfresca Red e lo fa bere 💦','drink',4,1.6);}}
   // road crossings: walk only
   for(let i=0;i<CROSS.length;i++){const r=CROSS[i];const dd=r.d-d;
     if(dd>8&&dd<55)toast('🚧 Attraversamento stradale: al passo!','cr'+i+P.phase,30,2.6);
@@ -807,7 +809,7 @@ function updatePlayer(dt){
   if(C.type==='reg'&&d>=VISTA_D-40&&d<VISTA_D)toast('👀 Tratto a vista: fino al traguardo solo trotto o galoppo!','vista'+P.phase,999,3.2);
   if(C.type==='reg'&&d>=VISTA_D&&P.kmh<8&&!P.vistaPen){P.vistaPen=true;P.pen+=20;P.penNotes.push('Passo nel tratto a vista: +20 s');whistle();toast('👀 Nel tratto a vista niente passo! +20 s',null,0,3);}
   if(d>L-140&&d<L-100)toast(C.type==='reg'?'🩺 Traguardo vicino: Red deve arrivare con il cuore tranquillo':'🩺 Vet gate in arrivo: rallenta per far scendere il battito','vetw'+P.phase,999,3);
-  if(P.hyd<30)toast('Red ha sete! Cerca la mamma all\'assistenza 💧','thirst',12);
+  if(P.hyd<30)toast('Red ha sete! Cerca mamma Silvia all\'assistenza 💧','thirst',12);
   for(const o of OBST){if(o.hit===P.phase)continue;
     if(Math.abs(d-o.d)<0.9&&Math.abs(P.off-o.off)<o.half+0.35&&P.kmh>9){o.hit=P.phase;P.kmh=5;P.gait=1;P.energy=Math.max(0,P.energy-8);P.stumbles++;P.shake=0.5;buzz();toast('Ops! Attenta ai rami caduti! 🪵','obs',1);}}
   if(P.km>=C.km){P.km=C.km;arriveFinishLine();}
