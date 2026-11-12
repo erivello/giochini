@@ -1020,13 +1020,44 @@ document.getElementById('bAlbum').onclick = guard(showAlbum);
 document.getElementById('bShop').onclick = guard(showShop);
 document.getElementById('bPlaces').onclick = guard(showPlaces);
 document.getElementById('bSound').onclick = () => { save.muted = !save.muted; persist(); refreshHud(); };
-/* ---------------- MUSICA DI SOTTOFONDO ---------------- */
-const music = new Audio('assets/sigla.mp3'); music.loop = true; music.volume = .35; music.preload = 'auto';
-window.__music = music;   // per i test dal browser
-let musicStarted = false;
+/* ---------------- MUSICA DI SOTTOFONDO ----------------
+   Due copie del brano: quando una sta per finire parte l'altra,
+   e si incrociano con una dissolvenza (fade out / fade in). */
+const MUSIC_VOL = .18, FADE = 1.6;   // volume (0..1) e durata della dissolvenza in secondi
+const tracks = [0, 1].map(() => { const a = new Audio('assets/sigla.mp3'); a.preload = 'auto'; return { a, g:null }; });
+let cur = 0, musicStarted = false, musicTimer = null, routed = false;
+window.__music = tracks;   // per i test dal browser
+// su iPhone/iPad il volume si può cambiare solo passando dal mixer audio del browser
+function routeMusic(){
+  if (routed || location.protocol === 'file:') return;
+  const ctx = audio(); if (!ctx) return;
+  try {
+    tracks.forEach(t => { const src = ctx.createMediaElementSource(t.a); t.g = ctx.createGain(); t.g.gain.value = 0; src.connect(t.g).connect(ctx.destination); });
+    routed = true;
+  } catch(e){}
+}
+function setVol(t, v){ v = Math.max(0, Math.min(1, v)); if (t.g) t.g.gain.value = v; else t.a.volume = v; }
+function envelope(t){ const d = t.a.duration, x = t.a.currentTime; if (!d) return 0; return MUSIC_VOL * Math.min(1, x / FADE, (d - x) / FADE); }
+function musicTick(){
+  const A = tracks[cur], B = tracks[1 - cur];
+  setVol(A, envelope(A));
+  if (!B.a.paused) setVol(B, envelope(B));   // quella che sta sfumando via
+  const d = A.a.duration;
+  if (d && d - A.a.currentTime <= FADE && B.a.paused){   // sta per finire: parte l'altra copia da capo
+    B.a.currentTime = 0; setVol(B, 0); B.a.play().catch(() => {}); cur = 1 - cur;
+  }
+}
 function syncMusic(){
   document.getElementById('bMusic').classList.toggle('off', !save.music);
-  if (save.music && musicStarted && !document.hidden) music.play().catch(() => {}); else music.pause();
+  if (save.music && musicStarted && !document.hidden){
+    routeMusic();
+    const A = tracks[cur];
+    if (A.a.paused){ setVol(A, envelope(A)); A.a.play().catch(() => {}); }
+    if (!musicTimer) musicTimer = setInterval(musicTick, 50);
+  } else {
+    tracks.forEach(t => t.a.pause());
+    clearInterval(musicTimer); musicTimer = null;
+  }
 }
 // i browser fanno partire l'audio solo dopo il primo tocco o tasto
 function firstTouch(){ if (musicStarted) return; musicStarted = true; syncMusic(); }
