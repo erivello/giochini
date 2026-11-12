@@ -8,7 +8,9 @@ Un gioco di pesca nel browser, fatto in casa.
 2. **Aspetta**: quando il galleggiante va sotto e compare il **!**, clicca subito.
 3. **Recupera**: tieni premuto per tirare il filo. Quando il pesce si dibatte e la tensione va nel rosso, **molla**, altrimenti la lenza si spezza.
 
-Con le monete compri canne, mulinelli ed esche migliori e sblocchi nuovi luoghi (lago e mare). In ogni luogo vive un **pesce leggendario**.
+Prima di ogni mossa del pesce compare un'icona: ⚡ scappa (molla), 🐬 salta (molla), ↩️ ti viene incontro (recupera veloce), ⬇️ va sul fondo (tieni con calma). Ogni specie ha un carattere: tranquillo, scattista, testardo, furbo o maratoneta.
+
+Con le monete compri canne, mulinelli ed esche migliori e sblocchi nuovi luoghi (lago e mare). In ogni luogo vive un **pesce leggendario**: sta al largo, si annuncia con un'ombra enorme e a metà lotta si arrabbia. Più lanci lunghi fai, più è probabile incontrarlo.
 
 ## Avviarlo
 

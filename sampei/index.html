@@ -101,47 +101,57 @@ const PLACES = [
   { id:'torrente', name:'Torrente di montagna', cost:0,
     sky:['#8fd3ff','#d9f1ff'], water:['#3fa7b8','#1d5f73'],
     fish:[
-      {id:'cavedano', name:'Cavedano', min:.2, max:1.5, w:40, str:2, price:10, col:['#93a2a6','#eef1ee','#c9773a'], pat:'plain',
+      {id:'cavedano', beh:'calmo', name:'Cavedano', min:.2, max:1.5, w:40, str:2, price:10, col:['#93a2a6','#eef1ee','#c9773a'], pat:'plain',
        fact:'Il cavedano mangia quasi di tutto: insetti, vermi e perfino le ciliegie che cadono in acqua!'},
-      {id:'trota', name:'Trota fario', min:.3, max:2.5, w:30, str:4, price:25, col:['#8a7a45','#f1e2b8','#d33b2c'], pat:'spots', dots2:'#2b2b2b',
+      {id:'trota', beh:'scattista', name:'Trota fario', min:.3, max:2.5, w:30, str:4, price:25, col:['#8a7a45','#f1e2b8','#d33b2c'], pat:'spots', dots2:'#2b2b2b',
        fact:'La trota fario vive in acque fredde e piene di ossigeno. Si riconosce dai puntini rossi e neri sui fianchi.'},
-      {id:'barbo', name:'Barbo', min:.5, max:3, w:20, str:5, price:18, col:['#a08c5a','#efe3c0','#7a5f2e'], pat:'plain', barbels:true,
+      {id:'barbo', beh:'testardo', name:'Barbo', min:.5, max:3, w:20, str:5, price:18, col:['#a08c5a','#efe3c0','#7a5f2e'], pat:'plain', barbels:true,
        fact:'Il barbo ha quattro "baffi" sotto la bocca, chiamati barbigli, che usa per cercare il cibo sul fondo.'},
-      {id:'temolo', name:'Temolo', min:.3, max:1.8, w:9, str:4, price:40, col:['#7b8794','#dfe5ea','#8a3a6a'], pat:'spots', sail:true,
+      {id:'temolo', beh:'scattista', name:'Temolo', min:.3, max:1.8, w:9, str:4, price:40, col:['#7b8794','#dfe5ea','#8a3a6a'], pat:'spots', sail:true,
        fact:'Il temolo ha una pinna sul dorso enorme, come una vela. Il suo nome scientifico, Thymallus, viene dal timo: si dice che profumi di quell\'erba!'},
-      {id:'regina', name:'Trota Regina', min:6, max:12, w:1.6, str:9, price:30, col:['#c9a227','#fff1b8','#b0421f'], pat:'spots', legend:true,
+      {id:'regina', beh:'scattista', name:'Trota Regina', min:6, max:12, w:1.6, str:9, price:30, col:['#c9a227','#fff1b8','#b0421f'], pat:'spots', legend:true,
        fact:'Leggenda del torrente: una trota grande come un cane, che nessun pescatore è mai riuscito a prendere... fino a oggi!'},
     ]},
   { id:'lago', name:'Lago dei canneti', cost:150,
     sky:['#ffcf8f','#ffeccc'], water:['#4f9a7a','#23523f'],
     fish:[
-      {id:'persico', name:'Persico reale', min:.2, max:1.5, w:40, str:3, price:15, col:['#8a9a32','#f0e7b0','#3b4a1a'], pat:'stripes',
+      {id:'persico', beh:'calmo', name:'Persico reale', min:.2, max:1.5, w:40, str:3, price:15, col:['#8a9a32','#f0e7b0','#3b4a1a'], pat:'stripes',
        fact:'Il persico reale ha strisce scure sui fianchi e una pinna sul dorso con spine appuntite: maneggialo con cura!'},
-      {id:'tinca', name:'Tinca', min:.4, max:2.5, w:30, str:4, price:18, col:['#5d6b2c','#c9b85a','#d07a2a'], pat:'plain',
+      {id:'tinca', beh:'calmo', name:'Tinca', min:.4, max:2.5, w:30, str:4, price:18, col:['#5d6b2c','#c9b85a','#d07a2a'], pat:'plain',
        fact:'La tinca ha la pelle scivolosissima e gli occhi rosso-arancio. Ama i fondali fangosi pieni di piante.'},
-      {id:'carpa', name:'Carpa', min:1, max:12, w:20, str:6, price:8, col:['#a7853e','#f0d68e','#7b5a22'], pat:'scales', barbels:true,
+      {id:'carpa', beh:'testardo', name:'Carpa', min:1, max:12, w:20, str:6, price:8, col:['#a7853e','#f0d68e','#7b5a22'], pat:'scales', barbels:true,
        fact:'La carpa può vivere anche più di 40 anni! Cerca il cibo sul fondo con i suoi barbigli.'},
-      {id:'luccio', name:'Luccio', min:1, max:10, w:9, str:8, price:14, col:['#4f6b35','#e3e6b8','#d6dc8a'], pat:'spots', long:true,
+      {id:'luccio', beh:'furbo', name:'Luccio', min:1, max:10, w:9, str:8, price:14, col:['#4f6b35','#e3e6b8','#d6dc8a'], pat:'spots', long:true,
        fact:'Il luccio è il re dei predatori d\'acqua dolce: ha centinaia di denti e caccia restando nascosto tra le piante.'},
-      {id:'siluro', name:'Siluro Barbagrigia', min:30, max:80, w:1.6, str:10, price:5, col:['#3e3f3a','#a8a894','#2a2a26'], pat:'plain', barbels:true, long:true, legend:true,
+      {id:'siluro', beh:'testardo', name:'Siluro Barbagrigia', min:30, max:80, w:1.6, str:10, price:5, col:['#3e3f3a','#a8a894','#2a2a26'], pat:'plain', barbels:true, long:true, legend:true,
        fact:'Si racconta che in fondo al lago viva un siluro vecchissimo, con i baffi lunghi come fruste. I siluri veri possono superare i 2 metri!'},
     ]},
   { id:'mare', name:'Molo sul mare', cost:400,
     sky:['#6ec6ff','#e6f7ff'], water:['#1f7fc4','#0b3b6b'],
     fish:[
-      {id:'sgombro', name:'Sgombro', min:.2, max:1, w:40, str:3, price:15, col:['#2f7f95','#eef3f5','#14384d'], pat:'waves',
+      {id:'sgombro', beh:'scattista', name:'Sgombro', min:.2, max:1, w:40, str:3, price:15, col:['#2f7f95','#eef3f5','#14384d'], pat:'waves',
        fact:'Lo sgombro nuota in banchi enormi, con migliaia di compagni, e non smette quasi mai di muoversi.'},
-      {id:'orata', name:'Orata', min:.3, max:3, w:28, str:5, price:30, col:['#9aa8b0','#eef2f4','#e8b923'], pat:'band', tall:true,
+      {id:'orata', beh:'furbo', name:'Orata', min:.3, max:3, w:28, str:5, price:30, col:['#9aa8b0','#eef2f4','#e8b923'], pat:'band', tall:true,
        fact:'L\'orata ha una striscia dorata tra gli occhi: è proprio da lì che viene il suo nome!'},
-      {id:'spigola', name:'Spigola', min:.5, max:5, w:22, str:6, price:28, col:['#7d8a96','#eef1f3','#4a5763'], pat:'plain',
+      {id:'spigola', beh:'scattista', name:'Spigola', min:.5, max:5, w:22, str:6, price:28, col:['#7d8a96','#eef1f3','#4a5763'], pat:'plain',
        fact:'Al nord la spigola la chiamano branzino: due nomi diversi, stesso pesce!'},
-      {id:'dentice', name:'Dentice', min:1, max:10, w:9, str:8, price:26, col:['#c27f73','#f6dfd6','#3a7fd0'], pat:'spots', tall:true,
+      {id:'dentice', beh:'testardo', name:'Dentice', min:1, max:10, w:9, str:8, price:26, col:['#c27f73','#f6dfd6','#3a7fd0'], pat:'spots', tall:true,
        fact:'Il dentice ha denti forti e robusti e vive vicino ai fondali rocciosi.'},
-      {id:'tonno', name:'Tonno rosso', min:80, max:250, w:1.6, str:10, price:3, col:['#1f3b66','#dfe7ee','#f5c518'], pat:'finlets', legend:true,
+      {id:'tonno', beh:'maratoneta', name:'Tonno rosso', min:80, max:250, w:1.6, str:10, price:3, col:['#1f3b66','#dfe7ee','#f5c518'], pat:'finlets', legend:true,
        fact:'Il tonno rosso è un nuotatore velocissimo: attraversa interi mari e può pesare più di un pianoforte!'},
     ]},
 ];
 const ALL_FISH = PLACES.flatMap(p => p.fish);
+
+/* Carattere dei pesci: quali mosse fanno, quanto riposano tra una mossa e l'altra, quanto durano le fughe */
+const BEHAVIOR = {
+  calmo:      { label:'😌 Tranquillo', desc:'Tira poco e si stanca presto.',          moves:{run:2, dive:2, charge:1}, rest:[3.0,4.5], len:1.0 },
+  scattista:  { label:'⚡ Scattista',  desc:'Salta fuori dall\'acqua e dà strattoni veloci.', moves:{run:3, jump:2, charge:1}, rest:[1.6,2.8], len:.75 },
+  testardo:   { label:'🪨 Testardo',   desc:'Si butta sul fondo e tira a lungo.',     moves:{dive:3, run:2},           rest:[2.4,3.6], len:1.5 },
+  furbo:      { label:'🦊 Furbo',      desc:'Cambia direzione e ti viene incontro per liberarsi.', moves:{charge:3, run:2, jump:1}, rest:[1.8,3.0], len:1.0 },
+  maratoneta: { label:'🏃 Maratoneta', desc:'Parte con una fuga lunghissima.',        moves:{run:4, dive:1},           rest:[2.2,3.4], len:1.4, firstRun:true },
+};
+const MOVE_ICON = { run:'⚡', jump:'🐬', charge:'↩️', dive:'⬇️' };
 
 const UPGRADES = {
   rod:  { ico:'🎣', title:'Canna', costs:[0,60,160,350,700],
@@ -157,11 +167,11 @@ const UPGRADES = {
 
 /* ---------------- SALVATAGGIO ---------------- */
 const SAVE_KEY = 'lenza-doro-v1';
-const DEFAULT_SAVE = { coins:0, rod:0, reel:0, bait:0, places:['torrente'], place:'torrente', album:{}, released:0, muted:false, seenIntro:false };
+const DEFAULT_SAVE = { coins:0, rod:0, reel:0, bait:0, places:['torrente'], place:'torrente', album:{}, released:0, muted:false, seenIntro:false, pity:{} };
 let save = load();
 function load(){
-  try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s) return Object.assign({}, DEFAULT_SAVE, s); } catch(e){}
-  return Object.assign({}, DEFAULT_SAVE, {album:{}, places:['torrente']});
+  try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s) return Object.assign({}, DEFAULT_SAVE, {pity:{}}, s); } catch(e){}
+  return Object.assign({}, DEFAULT_SAVE, {album:{}, places:['torrente'], pity:{}});
 }
 function persist(){ try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch(e){} }
 const place = () => PLACES.find(p => p.id === save.place) || PLACES[0];
@@ -196,6 +206,11 @@ const SFX = {
   win(){ [523,659,784,1046].forEach((f,i)=>tone(f,.25,'triangle',.12,0,i*.11)); },
   coin(){ tone(1200,.08,'square',.06); tone(1600,.12,'square',.06,0,.07); },
   warn(){ tone(220,.08,'square',.05); },
+  alert(){ tone(880,.07,'triangle',.08); tone(1175,.09,'triangle',.08,0,.08); },
+  whoosh(){ tone(300,.4,'sawtooth',.05,900); },
+  omen(){ tone(55,1.2,'sine',.3,40); tone(82,1.2,'triangle',.08,60); },
+  drum(){ tone(70,.18,'sine',.28,45); },
+  legend(){ [523,659,784,1046,784,1046,1318].forEach((f,i)=>tone(f,.3,'triangle',.13,0,i*.12)); },
 };
 
 /* ---------------- CANVAS ---------------- */
@@ -219,6 +234,7 @@ let tip = {x:0,y:0};
 let particles = [], ripples = [], clouds = [], birds = [];
 let tmpMsg = {t:'', until:0};
 let reelTick = 0, warnTick = 0;
+let shake = 0, omen = false, forceFish = null;
 
 for (let i=0;i<5;i++) clouds.push({x:rand(0,W), y:rand(30,140), s:rand(.6,1.3), v:rand(6,14)});
 for (let i=0;i<3;i++) birds.push({x:rand(0,W), y:rand(60,160), v:rand(20,40), p:rand(0,6)});
@@ -266,13 +282,17 @@ function doCast(){
 }
 
 function pickFish(){
-  const list = place().fish;
-  const ws = list.map(f => {
-    let w = f.w;
-    if (f.w < 12) w *= (0.5 + power*1.5) * (1 + save.bait*0.35);   // i rari amano i lanci lunghi
-    if (f.legend && power < 0.55) w = 0;                           // i leggendari stanno al largo
-    return w;
-  });
+  const pl = place();
+  if (forceFish){ const f = ALL_FISH.find(z => z.id === forceFish); forceFish = null; if (f) return f; }
+  // Il leggendario sta al largo: ogni lancio lungo senza vederlo aumenta la probabilità di incontrarlo
+  const leg = pl.fish.find(f => f.legend);
+  if (leg && power >= 0.55){
+    const pity = save.pity[pl.id] || 0;
+    if (Math.random() < 0.02 + pity*0.012 + save.bait*0.01){ save.pity[pl.id] = 0; persist(); return leg; }
+    save.pity[pl.id] = pity + 1; persist();
+  }
+  const list = pl.fish.filter(f => !f.legend);
+  const ws = list.map(f => f.w < 12 ? f.w * (0.5 + power*1.5) * (1 + save.bait*0.35) : f.w);   // i rari amano i lanci lunghi
   let r = Math.random() * ws.reduce((a,b)=>a+b, 0);
   for (let i=0;i<list.length;i++){ r -= ws[i]; if (r <= 0) return list[i]; }
   return list[0];
@@ -285,19 +305,46 @@ function rollWeight(f){
 
 function startReel(){
   SFX.bite();
-  R = { dist:100, ten:30, run:false, runT:rand(1.2,2.2), slack:0, over:0, sway:0 };
+  const b = BEHAVIOR[fish.beh];
+  const quickStart = b.firstRun || fish.legend;
+  R = { dist:100, ten:30, mode:'calm', modeT: quickStart ? .5 : rand(1.2,2.2), dur:1, next:null, forced: b.firstRun ? 'run' : null,
+        slack:0, over:0, sway:0, depth:0, angry:false, drum:0 };
+  if (fish.legend){ shake = 8; say(`⭐ È ${fish.name.toUpperCase()}, IL PESCE LEGGENDARIO! ⭐`, 3); }
   setState('reel');
 }
 
+function nextMove(){
+  if (R.forced){ const m = R.forced; R.forced = null; return m; }
+  const entries = Object.entries(BEHAVIOR[fish.beh].moves);
+  let r = Math.random() * entries.reduce((a,[,w]) => a + w, 0);
+  for (const [m, w] of entries){ r -= w; if (r <= 0) return m; }
+  return entries[0][0];
+}
+function splashAt(x, n, big){
+  for (let i=0;i<n;i++) particles.push({x, y:WATER, vx:rand(-120,120)*(big?1.6:1), vy:rand(-280,-80)*(big?1.3:1), life:1, c:'#e9f8ff', r:rand(2,5)});
+  ripples.push({x, y:WATER, r:6, a:1});
+}
+function enterMove(m){
+  const b = BEHAVIOR[fish.beh];
+  R.mode = m;
+  R.modeT = R.dur = m==='run' ? rand(.8,1.3)*b.len : m==='dive' ? rand(1.4,2.2)*b.len : m==='charge' ? rand(.9,1.4) : 1.0;
+  if (m==='run'){ splashAt(bob.x, 12); SFX.splash(); }
+  if (m==='jump'){ splashAt(bob.x, 18, true); SFX.splash(); shake = fish.legend ? 8 : 4; }
+  if (m==='charge'){ SFX.whoosh(); }
+  if (m==='dive'){ for (let i=0;i<10;i++) particles.push({x:bob.x+rand(-10,10), y:WATER, vx:rand(-20,20), vy:rand(-90,-30), life:.6, c:'#ffffffaa', r:rand(1,3)}); }
+}
+
 function lose(text, snapped){
+  if (fish && fish.legend){ save.pity[place().id] = 15; persist(); text = '⭐ Il leggendario è scappato... ma tornerà! 💪 ' + text; }
   if (snapped) SFX.snap(); else SFX.lose();
+  shake = snapped ? 6 : 0;
   say(text, 2.6);
   ripples.push({x:bob.x, y:WATER, r:4, a:1});
   setState('lost');
 }
 
 function catchFish(){
-  SFX.win();
+  if (fish.legend){ SFX.legend(); shake = 10; } else SFX.win();
   for (let i=0;i<30;i++) particles.push({x:bob.x, y:WATER, vx:rand(-160,160), vy:rand(-320,-120), life:1, c:'#bfe9ff', r:rand(2,5)});
   setState('caught');
   showCard();
@@ -308,9 +355,15 @@ function update(dt){
   const st = seat();
 
   // tip della canna: si piega con la tensione
-  const bend = S==='reel' ? R.ten * 0.55 : (S==='bite' ? 25 : 0);
+  const bend = S==='reel' ? R.ten * 0.8 : (S==='bite' ? 30 : 0);
   if (S==='charge'){ tip = {x: st.x + 70, y: st.y - 175}; }
-  else tip = {x: st.x + 150 - bend*0.35, y: st.y - 150 + bend};
+  else tip = {x: st.x + 150 - bend*0.4, y: st.y - 150 + bend};
+  // la canna trema quando è molto tesa o quando il pesce strattona
+  let vib = 0;
+  if (S==='reel') vib = Math.max(0, (R.ten - 60) / 40) * 6 + (holding && (R.mode==='run' || R.mode==='jump') ? 2 : 0) + (R.mode==='warn' ? 1.5 : 0);
+  if (S==='bite') vib = fish.legend ? 5 : 2.5;
+  tip.x += Math.sin(now*70) * vib; tip.y += Math.cos(now*57) * vib;
+  shake = Math.max(0, shake - dt*14);
 
   if (S==='charge'){
     const p = (T * 0.9) % 2; power = p < 1 ? p : 2 - p;     // barra che va avanti e indietro
@@ -326,6 +379,8 @@ function update(dt){
       bob.x = castX; bob.y = WATER; bob.under = 0;
       waitT = rand(2, 5) * (1 - save.bait*0.13);
       nibT = rand(.6, 1.5); nibble = 0;
+      fish = pickFish(); kg = rollWeight(fish); omen = false;
+      if (fish.legend) waitT += 2.5;
       setState('wait');
     }
   }
@@ -334,51 +389,81 @@ function update(dt){
     waitT -= dt; nibT -= dt; nibble = Math.max(0, nibble - dt);
     if (nibT <= 0 && waitT > 0.6){ nibble = .25; nibT = rand(.7, 1.8); SFX.nibble(); ripples.push({x:bob.x, y:WATER, r:3, a:.7}); }
     bob.y = WATER + Math.sin(now*3)*1.5 + (nibble>0 ? 5 : 0);
+    if (fish.legend && !omen && T > 1){ omen = true; SFX.omen(); shake = 3; say('😮 Un\'ombra ENORME passa sotto il galleggiante...', 3.5); }
     if (waitT <= 0){
-      fish = pickFish(); kg = rollWeight(fish);
       biteT = 1.05 + save.bait*0.08;
       SFX.bite();
-      for (let i=0;i<10;i++) particles.push({x:bob.x, y:WATER, vx:rand(-90,90), vy:rand(-180,-60), life:1, c:'#d6f3ff', r:rand(2,4)});
+      const n = fish.legend ? 30 : 10;
+      for (let i=0;i<n;i++) particles.push({x:bob.x, y:WATER, vx:rand(-90,90)*(fish.legend?2:1), vy:rand(-180,-60)*(fish.legend?1.6:1), life:1, c:'#d6f3ff', r:rand(2,4)});
+      if (fish.legend) shake = 7;
       setState('bite');
     }
   }
   else if (S==='bite'){
-    bob.y = WATER + 14 + Math.sin(now*30)*2;
+    bob.y = WATER + 14 + Math.sin(now*30)*(fish.legend ? 5 : 2);
     if (T > biteT){ lose('Troppo tardi! Ha mangiato l\'esca ed è scappato 😅'); }
   }
   else if (S==='reel'){
-    const str = fish.str;
-    R.runT -= dt;
-    if (R.runT <= 0){
-      R.run = !R.run;
-      R.runT = R.run ? rand(.6, 1.1 + str*.08) : rand(2.6 - str*.13, 4.2 - str*.2);
-      if (R.run){ for (let i=0;i<12;i++) particles.push({x:bob.x, y:WATER, vx:rand(-120,120), vy:rand(-260,-80), life:1, c:'#e9f8ff', r:rand(2,5)}); SFX.splash(); }
+    const str = fish.str, b = BEHAVIOR[fish.beh];
+
+    // --- sequenza delle mosse: calmo → avviso → mossa → calmo ...
+    R.modeT -= dt;
+    if (R.modeT <= 0){
+      if (R.mode === 'calm'){
+        R.next = nextMove(); R.mode = 'warn'; R.modeT = R.dur = fish.legend ? .4 : .5;
+        SFX.alert(); ripples.push({x:bob.x, y:WATER, r:4, a:.9});
+      } else if (R.mode === 'warn'){
+        enterMove(R.next);
+      } else {
+        if (R.mode === 'jump'){ splashAt(bob.x + 60, 22, true); SFX.splash(); shake = Math.max(shake, fish.legend ? 7 : 3); }
+        R.mode = 'calm';
+        R.modeT = R.dur = rand(b.rest[0], b.rest[1]) * (1 - Math.min(str, 8)*0.03) * (R.angry ? .75 : 1);
+      }
     }
+    // il leggendario si arrabbia a metà strada
+    if (fish.legend && !R.angry && R.dist < 50){ R.angry = true; shake = 7; SFX.omen(); say('😡 Si è arrabbiato! Tieni duro, ' + HERO + '!', 2.5); }
+    if (fish.legend){ R.drum -= dt; if (R.drum <= 0){ SFX.drum(); R.drum = R.angry ? .42 : .7; } }
+
+    // --- fisica del filo: ogni mossa ha la sua tensione "obiettivo" quando tieni premuto
     const rodK = save.rod * 6;
-    const reelSpeed = (20 + save.reel*4) * (1.15 - str*0.05);
+    const reelSpeed = (20 + save.reel*4) * Math.max(.6, 1.2 - str*0.07) * (1.1 - 0.3*Math.min(1, kg/fish.max));   // i pesci forti e grossi si recuperano più piano
+    const P = Math.min(str, 7);   // quanto filo può strappare il pesce (limitato, così anche i giganti si possono prendere)
+    const M = {
+      calm:   { target: 22 + str*4,   k:2.2, hold:-reelSpeed,          free: .6 },
+      warn:   { target: 26 + str*4,   k:2.2, hold:-reelSpeed*.5,       free: .6 },
+      run:    { target: 80 + str*8,   k:4.5, hold: P*.6,               free: P*1.4 },
+      dive:   { target: 45 + str*4.5, k:2.5, hold: 0,                  free: P*.5 },
+      jump:   { target: 90 + str*6,   k:5.0, hold: P*.3,               free: 0 },
+      charge: { target: 12,           k:3.0, hold:-reelSpeed*1.2,      free:-str*.6 },
+    }[R.mode];
     if (holding){
-      const target = R.run ? 70 + str*8 - rodK : 22 + str*4 - rodK;
-      R.ten += (target - R.ten) * (R.run ? 4.5 : 2.2) * dt + (Math.random()-.5) * 30 * dt;
-      R.dist += R.run ? str*0.6*dt : -reelSpeed*dt;
+      R.ten += (M.target - rodK - R.ten) * M.k * dt + (Math.random()-.5) * 30 * dt;
+      R.dist += M.hold * dt;
       reelTick -= dt; if (reelTick <= 0){ SFX.click(); reelTick = .07; }
     } else {
-      R.ten += (0 - R.ten) * 2.5 * dt;
-      R.dist += (R.run ? str*1.4 : 0.6) * dt;
+      R.ten += (0 - R.ten) * (R.mode==='charge' ? 4 : 2.5) * dt;
+      R.dist += M.free * dt;
     }
     R.ten = clamp(R.ten, 0, 110);
     R.dist = Math.min(R.dist, 100);
-    R.sway += dt * (R.run ? 9 : 3);
+    R.sway += dt * (R.mode==='run' || R.mode==='charge' ? 9 : R.mode==='warn' ? 14 : 3);
+    R.depth += ((R.mode==='dive' ? 70 : 0) - R.depth) * dt * 3;
 
     if (R.ten >= 100){ R.over += dt; warnTick -= dt; if (warnTick<=0){ SFX.warn(); warnTick=.12; } }
     else R.over = Math.max(0, R.over - dt);
-    if (R.ten < 8) R.slack += dt; else R.slack = Math.max(0, R.slack - dt*2);
+    if (R.ten > 92) shake = Math.max(shake, 2.5);
+    if (R.ten < 8) R.slack += dt * (R.mode==='charge' && !holding ? 2.2 : 1); else R.slack = Math.max(0, R.slack - dt*2);
 
     const endX = seat().x + 70;
-    bob.x = endX + (castX - endX) * (R.dist/100) + Math.sin(R.sway)*(R.run?14:5);
-    bob.y = WATER + 6 + Math.sin(R.sway*1.3)*3;
+    const wob = R.mode==='run' || R.mode==='charge' ? 14 : R.mode==='warn' ? 8 : 5;
+    bob.x = endX + (castX - endX) * (R.dist/100) + Math.sin(R.sway)*wob;
+    bob.y = WATER + 6 + Math.sin(R.sway*1.3)*3 + R.depth*.12;
 
-    if (R.over > 0.45) lose('La lenza si è spezzata! 💥 Quando il pesce tira, MOLLA!', true);
-    else if (R.slack > 3.5) lose('Lenza troppo molle: il pesce si è liberato! 🐟');
+    if (R.over > 0.3){
+      const why = R.mode==='jump' ? 'Hai tirato mentre saltava!' : R.mode==='run' ? 'Hai tirato mentre scappava!' : R.mode==='dive' ? 'Sul fondo tirava troppo forte!' : 'Troppa tensione!';
+      lose(`💥 Lenza spezzata! ${why}`, true);
+    }
+    else if (R.slack > 3.5) lose(R.mode==='charge' ? '🐟 Ti è venuto incontro e il filo era molle: si è liberato!' : '🐟 Lenza troppo molle: il pesce si è liberato!');
     else if (R.dist <= 0) catchFish();
   }
   else if (S==='lost'){
@@ -397,6 +482,12 @@ function update(dt){
 
 /* ---------------- DISEGNO ---------------- */
 function draw(){
+  ctx.save();
+  if (shake > 0) ctx.translate(rand(-shake, shake), rand(-shake, shake));
+  drawScene();
+  ctx.restore();
+}
+function drawScene(){
   const pl = place(), st = seat();
   // cielo
   let g = ctx.createLinearGradient(0,0,0,WATER);
@@ -424,17 +515,25 @@ function draw(){
   ctx.fillStyle = g; ctx.fillRect(0, WATER, W, H-WATER);
   drawWaves(pl);
 
-  // ombra del pesce che si avvicina
-  if (S==='wait' && waitT < 1.6){
-    const a = (1.6 - waitT) / 1.6;
+  // ombra del leggendario che gira intorno al galleggiante
+  if (S==='wait' && fish && fish.legend && omen){
+    const sx = bob.x + Math.sin(now*.8)*170, dirS = Math.cos(now*.8) > 0 ? 1 : -1;
+    drawFish(ctx, sx, WATER + 70, 190, fish, {dir:dirS, wig:now*3, sil:true, alpha:.3});
+  }
+  // ombra del pesce che si avvicina (più grande se il pesce è grosso)
+  if (S==='wait' && fish && !fish.legend && waitT < 1.6){
+    const a = (1.6 - waitT) / 1.6, rx = 22 + Math.min(1, kg/fish.max) * 22;
     ctx.globalAlpha = a * .35; ctx.fillStyle = '#0a1a22';
-    ctx.beginPath(); ctx.ellipse(bob.x + waitT*90, WATER + 40, 34, 10, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(bob.x + waitT*90, WATER + 40, rx, rx*.3, 0, 0, Math.PI*2); ctx.fill();
     ctx.globalAlpha = 1;
   }
-  // pesce sott'acqua durante il recupero
+  // pesce sott'acqua durante il recupero (o in volo quando salta)
   if (S==='reel'){
-    const L = fish.legend ? 130 : 40 + Math.min(1, kg/fish.max) * 45;
-    drawFish(ctx, bob.x + 18, WATER + 30 + L*0.1, L, fish, {dir:1, wig:R.sway*2, sil:true, alpha:.45});
+    const L = fishLen();
+    if (R.mode !== 'jump'){
+      const d = R.mode==='warn' ? (Math.sin(now*28) > 0 ? 1 : -1) : R.mode==='charge' ? -1 : 1;
+      drawFish(ctx, bob.x + 18*d, WATER + 30 + L*0.1 + R.depth, L, fish, {dir:d, wig:R.sway*2, sil:true, alpha: fish.legend ? .6 : .45, glow: fish.legend});
+    }
   }
 
   // increspature
@@ -447,9 +546,33 @@ function draw(){
   // filo e galleggiante
   drawLine();
 
+  // il pesce che salta fuori dall'acqua
+  if (S==='reel' && R.mode==='jump'){
+    const j = jumpPos();
+    drawFish(ctx, j.x, j.y, fishLen(), fish, {dir:1, wig:now*30, rot:j.rot});
+  }
+  // icona di avviso: che mossa sta per fare il pesce
+  if (S==='reel' && R.mode==='warn'){
+    const s = 1 + Math.sin(now*25)*.1, x = bob.x + 10, y = WATER - 46;
+    ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+    ctx.fillStyle = '#fffaf0'; ctx.strokeStyle = '#1d2b36'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-6, 17); ctx.lineTo(0, 30); ctx.lineTo(6, 17); ctx.fill();
+    ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(MOVE_ICON[R.next], 0, 2); ctx.textBaseline = 'alphabetic';
+    ctx.restore();
+  }
+
   // particelle
   particles.forEach(p => { ctx.globalAlpha = clamp(p.life,0,1); ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill(); });
   ctx.globalAlpha = 1;
+
+  // atmosfera da boss: bordi scuri durante la lotta col leggendario
+  if (fish && fish.legend && (S==='reel' || S==='bite' || (S==='wait' && omen))){
+    const v = ctx.createRadialGradient(W/2, H/2, H*.35, W/2, H/2, H*.95);
+    v.addColorStop(0, 'rgba(10,10,30,0)'); v.addColorStop(1, R && R.angry && S==='reel' ? 'rgba(120,0,0,.45)' : 'rgba(10,10,30,.5)');
+    ctx.fillStyle = v; ctx.fillRect(-20, -20, W+40, H+40);
+  }
 
   // interfaccia nel canvas
   if (S==='charge') drawPower(st);
@@ -599,7 +722,7 @@ function drawKid(st){
 
   // canna
   const back = {x: hand.x - 18, y: hand.y + 14};
-  const ctrl = {x: lerp(hand.x, tip.x, .55), y: lerp(hand.y, tip.y, .55) - 10 + (S==='reel' ? R.ten*0.25 : 0)};
+  const ctrl = {x: lerp(hand.x, tip.x, .55) + (S==='reel' ? R.ten*0.15 : 0), y: lerp(hand.y, tip.y, .55) - 14 - (S==='reel' ? R.ten*0.2 : 0)};
   ctx.strokeStyle = '#6b4423'; ctx.lineWidth = 6;
   ctx.beginPath(); ctx.moveTo(back.x, back.y); ctx.lineTo(hand.x, hand.y); ctx.stroke();
   ctx.strokeStyle = save.rod >= 4 ? '#d4a017' : ['#c8a165','#4a6fa5','#333','#8e44ad','#d4a017'][save.rod]; ctx.lineWidth = 3.5;
@@ -610,13 +733,24 @@ function drawKid(st){
   if (S==='reel' && holding){ const a = now*20; ctx.beginPath(); ctx.moveTo(hand.x-8, hand.y+10); ctx.lineTo(hand.x-8+Math.cos(a)*7, hand.y+10+Math.sin(a)*7); ctx.stroke(); }
 }
 
+function fishLen(){ return fish.legend ? 140 : 40 + Math.min(1, kg/fish.max) * 45; }
+function jumpPos(){ const p = 1 - R.modeT / R.dur; return { p, x: bob.x + 20 + p*60, y: WATER + 10 - Math.sin(p*Math.PI) * (fish.legend ? 150 : 115), rot: (p - .5) * 1.4 }; }
 function drawLine(){
   ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 1.3;
+  if (S==='reel'){ // il filo diventa rosso quando è troppo teso
+    const a = clamp((R.ten - 60) / 40, 0, 1), gb = Math.round(255 - a*190);
+    ctx.strokeStyle = `rgba(255,${gb},${gb},.95)`; ctx.lineWidth = 1.3 + a*1.4;
+  }
   let bx, by;
   if (S==='idle' || S==='charge' || S==='lost'){
     bx = tip.x + Math.sin(now*2)*3; by = tip.y + (S==='lost' ? 40 : 70);
     ctx.beginPath(); ctx.moveTo(tip.x, tip.y); ctx.lineTo(bx, by); ctx.stroke();
     if (S==='lost') return;
+  } else if (S==='reel' && R.mode==='jump'){ // il filo segue il pesce in volo fino alla bocca
+    const j = jumpPos(), half = fishLen() * .42;
+    bx = j.x + Math.cos(j.rot) * half; by = j.y + Math.sin(j.rot) * half;
+    ctx.beginPath(); ctx.moveTo(tip.x, tip.y); ctx.quadraticCurveTo((tip.x+bx)/2, Math.min(tip.y, by) + 10, bx, by); ctx.stroke();
+    return;
   } else {
     bx = bob.x; by = bob.y;
     const sag = S==='reel' ? (1 - R.ten/100) * 70 : (S==='cast' ? 10 : 45);
@@ -670,11 +804,17 @@ function drawReelUI(){
   ctx.restore();
 
   // barra distanza
-  const dx = 330, dy = 70, dw = 300, dh = 16;
+  const dx = 330, dy = 104, dw = 300, dh = 16;
   ctx.fillStyle = '#1d2b36'; roundRect(dx-4, dy-4, dw+8, dh+8, 10); ctx.fill();
   ctx.fillStyle = '#7fd3ff'; roundRect(dx, dy, dw*(1-R.dist/100), dh, 6); ctx.fill();
   ctx.fillStyle = '#fff'; ctx.font = '800 15px ' + font; ctx.textAlign = 'center';
-  ctx.fillText('🐟 ' + (R.run ? 'SI DIBATTE!' : 'in arrivo...'), dx + dw/2, dy - 10);
+  const lbl = { calm:'🐟 in arrivo...', warn:'👀 attento...', run:'⚡ SCAPPA!', jump:'🐬 SALTA!', charge:'↩️ TI VIENE INCONTRO!', dive:'⬇️ VA SUL FONDO' }[R.mode];
+  if (fish.legend){
+    ctx.font = '800 22px ' + font; ctx.fillStyle = R.angry ? '#ff8a7a' : '#ffd84a';
+    ctx.fillText(`⭐ ${fish.name.toUpperCase()} ⭐${R.angry ? ' 😡' : ''}`, dx + dw/2, dy - 32);
+    ctx.font = '800 15px ' + font; ctx.fillStyle = '#fff';
+  }
+  ctx.fillText(lbl, dx + dw/2, dy - 10);
   ctx.textAlign = 'left'; ctx.fillText('🧒', dx - 30, dy + 14);
 }
 function roundRect(x,y,w,h,r){ w = Math.max(w, 0); r = Math.min(r, w/2, h/2); ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
@@ -685,9 +825,9 @@ function drawFish(c, x, y, L, f, o={}){
   const h = L * (f.tall ? .44 : f.long ? .24 : .32);
   const sil = !!o.sil;
   const body = sil ? '#13222c' : f.col[0], belly = sil ? '#13222c' : f.col[1], acc = sil ? '#13222c' : f.col[2];
-  c.save(); c.translate(x, y); c.scale(dir, 1); c.globalAlpha = o.alpha ?? 1;
+  c.save(); c.translate(x, y); c.rotate(o.rot || 0); c.scale(dir, 1); c.globalAlpha = o.alpha ?? 1;
   c.lineJoin = 'round';
-  if (f.legend && !sil){ c.shadowColor = '#ffd84a'; c.shadowBlur = L*.12; }
+  if (f.legend && (!sil || o.glow)){ c.shadowColor = '#ffd84a'; c.shadowBlur = L*.12; }
   const tw = Math.sin(wig) * h * .25;
   // coda
   c.fillStyle = body;
@@ -736,8 +876,12 @@ function hintText(){
     case 'bite': return '❗ ABBOCCA! CLICCA SUBITO!';
     case 'reel':
       if (R.ten >= 85) return '🔥 TROPPO TESA! MOLLA!';
+      if (R.mode==='warn') return '👀 Attento! Guarda l\'icona: sta per fare una mossa...';
+      if (R.mode==='run') return '⚡ Scappa! Molla un attimo!';
+      if (R.mode==='jump') return '🐬 Salta fuori dall\'acqua! Molla la presa!';
+      if (R.mode==='charge') return holding ? '↩️ Ti viene incontro: recupera, recupera!' : '↩️ Ti viene incontro! TIENI PREMUTO e recupera!';
+      if (R.mode==='dive') return '⬇️ Va sul fondo: tieni premuto, con calma';
       if (R.slack > 1.2) return '😴 Lenza molle: tieni premuto e recupera!';
-      if (R.run) return '🐟 Si dibatte! Molla un attimo!';
       return holding ? '🌀 Recupera, recupera...' : `${key} per recuperare il filo`;
     default: return '';
   }
@@ -773,6 +917,7 @@ function showCard(){
       <h2>${fish.name}</h2>
       ${fish.legend ? `<p><b>${HERO} ha preso il pesce leggendario!</b></p>` : isNew ? `<p>Nuova specie nell'album di ${HERO}!</p>` : ''}
       <div class="kg">⚖️ ${kg.toLocaleString('it-IT')} kg &nbsp; · &nbsp; 🪙 ${value}</div>
+      <p>Carattere: <b>${BEHAVIOR[fish.beh].label}</b> · ${BEHAVIOR[fish.beh].desc}</p>
       <p class="fact">💡 ${fish.fact}</p>
       <div class="row">
         <button class="big" id="keep">🧺 Tienilo (+${value} 🪙)</button>
@@ -795,7 +940,7 @@ function showAlbum(){
     html += `<p><b>${p.name}</b>${save.places.includes(p.id) ? '' : ' 🔒'}</p><div class="grid">`;
     p.fish.forEach(f => {
       const a = save.album[f.id]; if (a) caught++;
-      html += `<div class="cell ${f.legend?'legend':''}" data-f="${f.id}"><div class="fc"></div><b>${a ? f.name : (f.legend ? '⭐ ???' : '???')}</b>${a ? `presi: ${a.n}<br>record: ${a.best.toLocaleString('it-IT')} kg` : '<br>&nbsp;'}</div>`;
+      html += `<div class="cell ${f.legend?'legend':''}" data-f="${f.id}"><div class="fc"></div><b>${a ? f.name : (f.legend ? '⭐ ???' : '???')}</b>${a ? `${BEHAVIOR[f.beh].label}<br>presi: ${a.n} · record: ${a.best.toLocaleString('it-IT')} kg` : '<br>&nbsp;'}</div>`;
     });
     html += '</div>';
   });
@@ -853,6 +998,8 @@ function showIntro(){
       <div class="step"><div class="e">👀</div><b>2. Aspetta</b><br>Quando il galleggiante va <b>sotto</b> e compare il <b>!</b>, clicca subito!</div>
       <div class="step"><div class="e">🌀</div><b>3. Recupera</b><br>Tieni premuto per tirare. Se la tensione va nel <b style="color:#e74c3c">rosso</b>, <b>molla</b> o si rompe il filo!</div>
     </div>
+    <p><b>Le mosse dei pesci</b>: prima di ogni mossa compare un'icona.<br>
+      ⚡ <b>scappa</b> → molla &nbsp;·&nbsp; 🐬 <b>salta</b> → molla &nbsp;·&nbsp; ↩️ <b>ti viene incontro</b> → recupera veloce &nbsp;·&nbsp; ⬇️ <b>va sul fondo</b> → tieni con calma</p>
     <div class="row"><button class="big" id="go">Iniziamo! 🐟</button></div>`, false);
   document.getElementById('go').onclick = () => { save.seenIntro = true; persist(); audio(); closePanel(); };
 }
@@ -890,7 +1037,7 @@ requestAnimationFrame(frame);
 
 // piccolo aiuto per i test dal browser
 window.__game = { get state(){ return S; }, get R(){ return R; }, get fish(){ return fish; }, get kg(){ return kg; }, save,
-  press, release, tick(n=1){ for (let i=0;i<n;i++) if (!uiOpen || S==='caught') update(1/60); draw(); } };
+  press, release, force(id){ forceFish = id; }, tick(n=1){ for (let i=0;i<n;i++) if (!uiOpen || S==='caught') update(1/60); draw(); } };
 </script>
 </body>
 </html>
