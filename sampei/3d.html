@@ -484,7 +484,8 @@ const KID = {};
   const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest:false })); tag.scale.set(1.1, .275, 1); tag.position.set(0, 2.2, 0); kid.add(tag);
   KID.tag = tag;
 })();
-const HAND = V(.22, 1.12, -.5);   // dove tiene la canna (nel sistema del mondo, Tommaso è all'origine)
+const HAND_LOCAL = V(.22, 1.12, -.5);   // dove tiene la canna, nel sistema di Tommaso
+const HAND = HAND_LOCAL.clone();        // la stessa posizione nel mondo (si aggiorna quando Tommaso si gira)
 
 /* ---------------- CANNA, FILO, GALLEGGIANTE ---------------- */
 const rodColors = ['#c8a165','#4a6fa5','#333333','#8e44ad','#d4a017'];
@@ -507,8 +508,11 @@ function rebuildRod(ten){
   if (S === 'charge'){ tipT = HAND.clone().add(V(.15 + aim*.9, 2.7, .9)); mid = HAND.clone().lerp(tipT, .5); }
   else {
     const bend = ten;   // 0..100
-    const ax = (S === 'idle') ? aim*1.3 : (bob.x - .55) * bend/600;
-    tipT = HAND.clone().add(V(.55 + ax, 2.3 - bend*.016, -2.2 - bend*.004));
+    // la canna punta verso il galleggiante/pesce (o verso la mira quando si è fermi)
+    const target = S === 'idle' ? landingPoint(.6) : bob;
+    const dx = target.x - HAND.x, dz = target.z - HAND.z, dl = Math.hypot(dx, dz) || 1;
+    const reach = 2.2 + bend*.004;
+    tipT = HAND.clone().add(V(dx/dl*reach + .3, 2.3 - bend*.016, dz/dl*reach));
     mid = HAND.clone().lerp(tipT, .5).add(V(0, .25 + bend*.004, -.1));
   }
   // vibrazione
@@ -704,7 +708,11 @@ function startReel(){
   SFX.bite();
   const b = BEHAVIOR[fish.beh];
   R = { dist:100, ten:30, mode:'calm', modeT: (b.firstRun || fish.legend) ? .5 : rand(1.2,2.2), dur:1, next:null, forced: b.firstRun ? 'run' : null,
-        slack:0, over:0, sway:0, depth:0, angry:false, drum:0 };
+        slack:0, over:0, sway:0, depth:0, angry:false, drum:0,
+        sz: fish.legend ? 1 : Math.min(1, kg/fish.max),   // quanto è grosso (0..1)
+        lat:0, latT:0, head:0, base:V(), prev:null };
+  R.maxDist = 100 + 50*R.sz;   // i pesci grossi possono scappare oltre il punto del lancio
+  if (R.sz > .6){ R.forced = 'run'; R.modeT = .5; }   // e partono subito con una bella fuga
   if (fish.legend){ shake = .25; say(`⭐ È ${fish.name.toUpperCase()}, IL PESCE LEGGENDARIO! ⭐`, 3); }
   setState('reel');
 }
@@ -718,11 +726,19 @@ function nextMove(){
 function enterMove(m){
   const b = BEHAVIOR[fish.beh];
   R.mode = m;
-  R.modeT = R.dur = m==='run' ? rand(.8,1.3)*b.len : m==='dive' ? rand(1.4,2.2)*b.len : m==='charge' ? rand(.9,1.4) : 1.0;
+  R.modeT = R.dur = m==='run' ? rand(.8,1.3)*b.len*(.85 + .35*R.sz) : m==='dive' ? rand(1.4,2.2)*b.len : m==='charge' ? rand(.9,1.4) : 1.0;
   if (m==='run'){ splash(bob, 14); ripple(bob, .4); SFX.splash(); }
   if (m==='jump'){ splash(bob, 24, true); ripple(bob, .5); SFX.splash(); shake = fish.legend ? .3 : .15; }
   if (m==='charge') SFX.whoosh();
+  // dove va il pesce: le fughe lo portano lontano di lato, quando ti viene incontro torna verso il centro
+  const side = Math.random() < .5 ? -1 : 1;
+  if (m==='run') R.latT = R.lat + side * rand(2, 3 + 4*R.sz);
+  else if (m==='charge') R.latT = R.lat * .3;
+  else R.latT = R.lat + rand(-1, 1);
+  R.latT = clamp(R.latT, -latLimit(), latLimit());
 }
+function latLimit(){ return place().id === 'torrente' ? 8 : place().id === 'lago' ? 11 : 18; }
+function lerpAngle(a, b, t){ let d = (b - a) % (Math.PI*2); if (d > Math.PI) d -= Math.PI*2; if (d < -Math.PI) d += Math.PI*2; return a + d*t; }
 function lose(text, snapped){
   if (fish && fish.legend){ save.pity[place().id] = 15; persist(); text = '⭐ Il leggendario è scappato... ma tornerà! 💪 ' + text; }
   if (snapped) SFX.snap(); else SFX.lose();
@@ -786,6 +802,7 @@ function update(dt){
       else {
         if (R.mode === 'jump'){ const j = jumpPos(); splash(j.pos.setY(0), 26, true); ripple(j.pos, .5); SFX.splash(); shake = Math.max(shake, fish.legend ? .3 : .12); }
         R.mode = 'calm';
+        R.latT = clamp(R.lat + rand(-1.5, 1.5), -latLimit(), latLimit());   // a riposo gironzola un po'
         R.modeT = R.dur = rand(b.rest[0], b.rest[1]) * (1 - Math.min(str, 8)*0.03) * (R.angry ? .75 : 1);
       }
     }
@@ -796,9 +813,9 @@ function update(dt){
     const reelSpeed = (20 + save.reel*4) * Math.max(.6, 1.2 - str*0.07) * (1.1 - 0.3*Math.min(1, kg/fish.max));
     const P = Math.min(str, 7);
     const M = {
-      calm:   { target: 22 + str*4,   k:2.2, hold:-reelSpeed,     free: .6 },
+      calm:   { target: 22 + str*4,   k:2.2, hold:-reelSpeed * (R.dist > 100 ? 1.5 : 1), free: .6 },   // dopo una lunga fuga è stanco: si recupera più in fretta
       warn:   { target: 26 + str*4,   k:2.2, hold:-reelSpeed*.5,  free: .6 },
-      run:    { target: 80 + str*8,   k:4.5, hold: P*.6,          free: P*1.4 },
+      run:    { target: 80 + str*8,   k:4.5, hold: P*.6*(.6 + 1.1*R.sz), free: P*1.4*(.6 + 1.1*R.sz) },
       dive:   { target: 45 + str*4.5, k:2.5, hold: 0,             free: P*.5 },
       jump:   { target: 90 + str*6,   k:5.0, hold: P*.3,          free: 0 },
       charge: { target: 12,           k:3.0, hold:-reelSpeed*1.2, free:-str*.6 },
@@ -812,7 +829,7 @@ function update(dt){
       R.dist += M.free * dt;
     }
     R.ten = clamp(R.ten, 0, 110);
-    R.dist = Math.min(R.dist, 100);
+    R.dist = Math.min(R.dist, R.maxDist);
     R.sway += dt * (R.mode==='run' || R.mode==='charge' ? 9 : R.mode==='warn' ? 14 : 3);
     R.depth += ((R.mode==='dive' ? 1 : 0) - R.depth) * dt * 3;
 
@@ -822,7 +839,17 @@ function update(dt){
     if (R.ten < 8) R.slack += dt * (R.mode==='charge' && !holding ? 2.2 : 1); else R.slack = Math.max(0, R.slack - dt*2);
 
     const wob = R.mode==='run' || R.mode==='charge' ? .6 : R.mode==='warn' ? .35 : .2;
-    bob.lerpVectors(END, castTo, R.dist/100);
+    const latSpeed = R.mode==='run' ? 2.5 + 2*R.sz : R.mode==='charge' ? 2 : .8;
+    R.lat += clamp(R.latT - R.lat, -latSpeed*dt, latSpeed*dt);
+    R.base.lerpVectors(END, castTo, R.dist/100);
+    R.base.x = clamp(R.base.x + R.lat * Math.min(1, R.dist/25), -latLimit() - 1, latLimit() + 1);
+    // il pesce si gira nella direzione in cui si muove
+    if (R.prev && dt > 0){
+      const vx = (R.base.x - R.prev.x)/dt, vz = (R.base.z - R.prev.z)/dt;
+      if (Math.hypot(vx, vz) > .3) R.head = lerpAngle(R.head, Math.atan2(-vx, -vz), dt*5);
+    }
+    R.prev = R.base.clone();
+    bob.copy(R.base);
     bob.x += Math.sin(R.sway) * wob;
     bob.y = waveH(bob.x, bob.z, now) - .05 - R.depth*.25;
     if (Math.random() < dt*3) ripple(bob, .2);
@@ -845,8 +872,13 @@ function updateScene(dt){
 
   // Tommaso: gambe che dondolano, testa che segue il galleggiante, salto di gioia
   KID.legs.forEach((l, i) => l.rotation.x = Math.sin(now*2 + i*Math.PI) * .25);
+  const follow = (S === 'idle' || S === 'charge') ? landingPoint(.6) : bob;
+  const bodyYaw = clamp(Math.atan2(-follow.x, -follow.z), -.75, .75) * .7;
+  kid.rotation.y = lerp(kid.rotation.y, bodyYaw, dt*3);
+  kid.rotation.x = lerp(kid.rotation.x, S === 'reel' ? R.ten * .0016 : 0, dt*4);   // si piega all'indietro quando tira
+  kid.updateMatrixWorld(); HAND.copy(HAND_LOCAL).applyMatrix4(kid.matrixWorld);
   const lookAt = (S === 'idle' || S === 'charge') ? landingPoint(.6) : bob;
-  KID.head.rotation.y = lerp(KID.head.rotation.y, clamp(Math.atan2(-(lookAt.x - 0), -(lookAt.z - 0)) , -.6, .6), dt*4);
+  KID.head.rotation.y = lerp(KID.head.rotation.y, clamp(Math.atan2(-lookAt.x, -lookAt.z) - kid.rotation.y, -.6, .6), dt*4);
   KID.head.rotation.x = S === 'reel' ? -.15 : 0;
   kid.position.y = seatY - .75 + (S === 'caught' ? Math.abs(Math.sin(now*8)) * .15 : 0);
   KID.arms[0].rotation.x = .55 + (S === 'reel' && holding ? Math.sin(now*25) * .15 : 0);
@@ -896,10 +928,11 @@ function updateScene(dt){
         lineEnd = fish3d.localToWorld(V(0, 0, -.5)); sag = 0;
       } else {
         setSil(fish3d, true, fish.legend);
-        const away = R.mode === 'charge' ? Math.PI - .9 : .9;   // in diagonale: si vede il profilo
-        const shakeY = R.mode === 'warn' ? Math.sin(now*28) * .6 : Math.sin(R.sway) * .35;
-        fish3d.position.set(bob.x, -.3 - fishLen()*.12 - R.depth*1.6, bob.z - fishLen()*.45);
-        fish3d.rotation.set(R.mode === 'dive' ? -.5 : 0, away + shakeY, 0);
+        const shakeY = R.mode === 'warn' ? Math.sin(now*28) * .6 : Math.sin(R.sway) * .3;
+        const h = R.head + shakeY, L = fishLen();
+        // la bocca è vicino al galleggiante, il corpo dietro nella direzione in cui nuota
+        fish3d.position.set(bob.x + Math.sin(h)*L*.45, -.3 - L*.12 - R.depth*1.6, bob.z + Math.cos(h)*L*.45);
+        fish3d.rotation.set(R.mode === 'dive' ? -.5 : 0, h, 0);
       }
       fish3d.userData.tail.rotation.y = Math.sin(now * (R.mode === 'calm' ? 8 : 18)) * .5;
     }
@@ -915,6 +948,7 @@ function updateScene(dt){
   camLook.lerp(lookWant, dt*2);
   // durante la lotta la telecamera si avvicina e si sposta verso il pesce
   const camWant = CAM_BASE.clone();
+  if (S === 'reel') camWant.x += clamp(bob.x, -10, 10) * .15;
   if (S === 'reel' && fish.legend) camWant.add(V(.6, .6, .9));
   camera.position.lerp(camWant, dt*2);
   const s = shake;
@@ -970,7 +1004,7 @@ function updateHud(){
   if (reel){
     markEl.style.bottom = `calc(${Math.min(R.ten, 100)}% - 2px)`;
     tensionEl.classList.toggle('hot', R.ten >= 85);
-    fightFill.style.width = (100 - R.dist) + '%';
+    fightFill.style.width = clamp(100 - R.dist, 0, 100) + '%';
     fightLbl.textContent = { calm:'🐟 in arrivo...', warn:'👀 attento...', run:'⚡ SCAPPA!', jump:'🐬 SALTA!', charge:'↩️ TI VIENE INCONTRO!', dive:'⬇️ VA SUL FONDO' }[R.mode];
     fightLeg.style.display = fish.legend ? 'block' : 'none';
     fightLeg.textContent = `⭐ ${fish.name.toUpperCase()} ⭐${R.angry ? ' 😡' : ''}`;
