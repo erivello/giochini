@@ -27,6 +27,8 @@
     padding:2px 10px;font-size:clamp(12px,1.9vw,19px);box-shadow:0 3px 0 var(--ink);text-decoration:none;color:var(--ink);font-weight:800}
   .hb:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
   .hb:disabled{opacity:.45;cursor:not-allowed}
+  .hb.off{opacity:.55;position:relative}
+  .hb.off::after{content:'';position:absolute;left:15%;right:15%;top:48%;height:3px;background:#e74c3c;border-radius:2px;transform:rotate(-35deg)}
   #msg{position:absolute;left:50%;bottom:3%;transform:translateX(-50%);background:#1d2b36e6;color:#fff;
     padding:4px 18px;border-radius:999px;font-weight:700;font-size:clamp(12px,2vw,20px);white-space:nowrap;pointer-events:none;
     max-width:94%;overflow:hidden;text-overflow:ellipsis;z-index:4}
@@ -106,7 +108,8 @@
       <button class="hb" id="bShop">🛒 Negozio</button>
       <button class="hb" id="bPlaces">🗺️ Luoghi</button>
       <a class="hb" id="b2d" href="index.html">2D</a>
-      <button class="hb" id="bSound">🔊</button>
+      <button class="hb" id="bMusic" title="Musica">🎵</button>
+      <button class="hb" id="bSound" title="Effetti sonori">🔊</button>
     </div>
   </div>
   <div id="tension"><div class="zones"><div class="mark"></div></div><div class="lbl">TENSIONE</div></div>
@@ -203,7 +206,7 @@ const UPGRADES = {
 
 /* ---------------- SALVATAGGIO (condiviso con la versione 2D) ---------------- */
 const SAVE_KEY = 'lenza-doro-v1';
-const DEFAULT_SAVE = { coins:0, rod:0, reel:0, bait:0, places:['torrente'], place:'torrente', album:{}, released:0, muted:false, seenIntro:false, pity:{} };
+const DEFAULT_SAVE = { coins:0, rod:0, reel:0, bait:0, places:['torrente'], place:'torrente', album:{}, released:0, muted:false, music:true, seenIntro:false, pity:{} };
 let save = load();
 function load(){
   try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s) return Object.assign({}, DEFAULT_SAVE, {pity:{}}, s); } catch(e){}
@@ -1176,6 +1179,21 @@ document.getElementById('bAlbum').onclick = guard(showAlbum);
 document.getElementById('bShop').onclick = guard(showShop);
 document.getElementById('bPlaces').onclick = guard(showPlaces);
 document.getElementById('bSound').onclick = () => { save.muted = !save.muted; persist(); refreshHud(); };
+/* ---------------- MUSICA DI SOTTOFONDO ---------------- */
+const music = new Audio('assets/sigla.mp3'); music.loop = true; music.volume = .35; music.preload = 'auto';
+window.__music = music;   // per i test dal browser
+let musicStarted = false;
+function syncMusic(){
+  document.getElementById('bMusic').classList.toggle('off', !save.music);
+  if (save.music && musicStarted && !document.hidden) music.play().catch(() => {}); else music.pause();
+}
+// i browser fanno partire l'audio solo dopo il primo tocco o tasto
+function firstTouch(){ if (musicStarted) return; musicStarted = true; syncMusic(); }
+window.addEventListener('pointerdown', firstTouch, true);
+window.addEventListener('keydown', firstTouch, true);
+document.addEventListener('visibilitychange', syncMusic);   // si ferma se cambi scheda
+document.getElementById('bMusic').onclick = () => { save.music = !save.music; persist(); musicStarted = true; syncMusic(); };
+syncMusic();
 document.querySelector('.hud').addEventListener('pointerdown', e => e.stopPropagation());
 
 /* ---------------- LOOP ---------------- */
