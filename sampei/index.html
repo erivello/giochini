@@ -1,0 +1,888 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Lenza d'Oro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1d2b36; --paper:#fffaf0; --accent:#e74c3c; --gold:#f5b82e; --ok:#2ecc71; --blue:#2e86de;
+    --font:'Baloo 2','Trebuchet MS','Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#0f2233;color:var(--ink);font-family:var(--font);overflow:hidden;
+    -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+  #wrap{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:min(100vw,calc(100vh*16/9));aspect-ratio:16/9;overflow:hidden;border-radius:6px;box-shadow:0 10px 40px #0008}
+  canvas#c{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block;cursor:pointer}
+  .hud{position:absolute;top:1.6%;left:1.4%;right:1.4%;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;gap:8px}
+  .pill{pointer-events:auto;background:var(--paper);border:3px solid var(--ink);border-radius:999px;padding:2px 14px;
+    font-weight:800;font-size:clamp(13px,2.2vw,22px);box-shadow:0 3px 0 var(--ink)}
+  .btns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  button{font-family:var(--font);font-weight:800;cursor:pointer;color:var(--ink)}
+  .hb{pointer-events:auto;background:var(--paper);border:3px solid var(--ink);border-radius:14px;
+    padding:2px 10px;font-size:clamp(12px,1.9vw,19px);box-shadow:0 3px 0 var(--ink)}
+  .hb:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+  .hb:disabled{opacity:.45;cursor:not-allowed}
+  #msg{position:absolute;left:50%;bottom:3%;transform:translateX(-50%);background:#1d2b36e6;color:#fff;
+    padding:4px 18px;border-radius:999px;font-weight:700;font-size:clamp(12px,2vw,20px);white-space:nowrap;pointer-events:none;
+    max-width:94%;overflow:hidden;text-overflow:ellipsis}
+  #overlay{position:absolute;inset:0;background:#0f223399;display:none;align-items:center;justify-content:center;padding:2%}
+  #overlay.show{display:flex}
+  .panel{background:var(--paper);border:4px solid var(--ink);border-radius:20px;box-shadow:0 6px 0 var(--ink);
+    width:min(92%,720px);max-height:94%;overflow:auto;padding:14px 18px;position:relative}
+  .panel h2{margin:0 0 6px;font-size:clamp(20px,3.2vw,32px);line-height:1.1}
+  .panel p{margin:4px 0;font-size:clamp(13px,1.8vw,18px);line-height:1.35}
+  .close{position:absolute;top:8px;right:10px;background:var(--accent);color:#fff;border:3px solid var(--ink);border-radius:12px;
+    font-size:18px;width:38px;height:38px;line-height:1}
+  .big{background:var(--ok);border:3px solid var(--ink);border-radius:14px;padding:6px 16px;font-size:clamp(15px,2.2vw,22px);box-shadow:0 3px 0 var(--ink)}
+  .big.alt{background:#7fd3ff}
+  .big:disabled{opacity:.45;cursor:not-allowed}
+  .row{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:10px}
+  .card{text-align:center}
+  .card canvas{width:min(100%,360px);height:auto}
+  .badge{display:inline-block;background:var(--gold);border:3px solid var(--ink);border-radius:10px;padding:0 10px;font-weight:800;margin:0 4px;
+    animation:pop .5s ease-out}
+  .badge.red{background:#ff7b6b}
+  @keyframes pop{0%{transform:scale(.3)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+  .kg{font-size:clamp(18px,2.6vw,26px);font-weight:800}
+  .fact{background:#e8f4ff;border:2px dashed var(--blue);border-radius:12px;padding:6px 10px;text-align:left}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin:6px 0 12px}
+  .cell{border:3px solid var(--ink);border-radius:12px;padding:4px;text-align:center;background:#fff;font-size:14px;line-height:1.2}
+  .cell.legend{background:#fff4cf}
+  .cell canvas{width:100%;height:auto}
+  .cell b{display:block;font-size:15px}
+  .shop{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+  .item{display:flex;align-items:center;gap:12px;border:3px solid var(--ink);border-radius:14px;padding:8px 12px;background:#fff}
+  .item .ico{font-size:34px}
+  .item .txt{flex:1;font-size:clamp(13px,1.8vw,17px);line-height:1.25}
+  .item .lv{display:flex;gap:3px;margin-top:3px}
+  .item .lv i{width:16px;height:10px;border:2px solid var(--ink);border-radius:3px;background:#ddd}
+  .item .lv i.on{background:var(--gold)}
+  .places{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:8px}
+  .place{border:3px solid var(--ink);border-radius:14px;overflow:hidden;background:#fff;text-align:center;padding-bottom:8px}
+  .place .sky{height:70px}
+  .place b{display:block;margin:6px 0 4px;font-size:17px}
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:10px 0}
+  .step{border:3px solid var(--ink);border-radius:14px;padding:8px;background:#fff;text-align:center;font-size:15px;line-height:1.3}
+  .step .e{font-size:34px}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c"></canvas>
+  <div class="hud">
+    <div class="pill" id="coins">🪙 0</div>
+    <div class="btns">
+      <button class="hb" id="bAlbum">🐟 Album</button>
+      <button class="hb" id="bShop">🛒 Negozio</button>
+      <button class="hb" id="bPlaces">🗺️ Luoghi</button>
+      <button class="hb" id="bSound">🔊</button>
+    </div>
+  </div>
+  <div id="msg"></div>
+  <div id="overlay"><div class="panel" id="panel"></div></div>
+</div>
+
+<script>
+'use strict';
+/* =========================================================
+   LENZA D'ORO — prototipo di gioco di pesca
+   ========================================================= */
+
+const W = 960, H = 540, WATER = 322;
+
+/* ---------------- DATI: luoghi e pesci ---------------- */
+const PLACES = [
+  { id:'torrente', name:'Torrente di montagna', cost:0,
+    sky:['#8fd3ff','#d9f1ff'], water:['#3fa7b8','#1d5f73'],
+    fish:[
+      {id:'cavedano', name:'Cavedano', min:.2, max:1.5, w:40, str:2, price:10, col:['#93a2a6','#eef1ee','#c9773a'], pat:'plain',
+       fact:'Il cavedano mangia quasi di tutto: insetti, vermi e perfino le ciliegie che cadono in acqua!'},
+      {id:'trota', name:'Trota fario', min:.3, max:2.5, w:30, str:4, price:25, col:['#8a7a45','#f1e2b8','#d33b2c'], pat:'spots', dots2:'#2b2b2b',
+       fact:'La trota fario vive in acque fredde e piene di ossigeno. Si riconosce dai puntini rossi e neri sui fianchi.'},
+      {id:'barbo', name:'Barbo', min:.5, max:3, w:20, str:5, price:18, col:['#a08c5a','#efe3c0','#7a5f2e'], pat:'plain', barbels:true,
+       fact:'Il barbo ha quattro "baffi" sotto la bocca, chiamati barbigli, che usa per cercare il cibo sul fondo.'},
+      {id:'temolo', name:'Temolo', min:.3, max:1.8, w:9, str:4, price:40, col:['#7b8794','#dfe5ea','#8a3a6a'], pat:'spots', sail:true,
+       fact:'Il temolo ha una pinna sul dorso enorme, come una vela. Il suo nome scientifico, Thymallus, viene dal timo: si dice che profumi di quell\'erba!'},
+      {id:'regina', name:'Trota Regina', min:6, max:12, w:1.6, str:9, price:30, col:['#c9a227','#fff1b8','#b0421f'], pat:'spots', legend:true,
+       fact:'Leggenda del torrente: una trota grande come un cane, che nessun pescatore è mai riuscito a prendere... fino a oggi!'},
+    ]},
+  { id:'lago', name:'Lago dei canneti', cost:150,
+    sky:['#ffcf8f','#ffeccc'], water:['#4f9a7a','#23523f'],
+    fish:[
+      {id:'persico', name:'Persico reale', min:.2, max:1.5, w:40, str:3, price:15, col:['#8a9a32','#f0e7b0','#3b4a1a'], pat:'stripes',
+       fact:'Il persico reale ha strisce scure sui fianchi e una pinna sul dorso con spine appuntite: maneggialo con cura!'},
+      {id:'tinca', name:'Tinca', min:.4, max:2.5, w:30, str:4, price:18, col:['#5d6b2c','#c9b85a','#d07a2a'], pat:'plain',
+       fact:'La tinca ha la pelle scivolosissima e gli occhi rosso-arancio. Ama i fondali fangosi pieni di piante.'},
+      {id:'carpa', name:'Carpa', min:1, max:12, w:20, str:6, price:8, col:['#a7853e','#f0d68e','#7b5a22'], pat:'scales', barbels:true,
+       fact:'La carpa può vivere anche più di 40 anni! Cerca il cibo sul fondo con i suoi barbigli.'},
+      {id:'luccio', name:'Luccio', min:1, max:10, w:9, str:8, price:14, col:['#4f6b35','#e3e6b8','#d6dc8a'], pat:'spots', long:true,
+       fact:'Il luccio è il re dei predatori d\'acqua dolce: ha centinaia di denti e caccia restando nascosto tra le piante.'},
+      {id:'siluro', name:'Siluro Barbagrigia', min:30, max:80, w:1.6, str:10, price:5, col:['#3e3f3a','#a8a894','#2a2a26'], pat:'plain', barbels:true, long:true, legend:true,
+       fact:'Si racconta che in fondo al lago viva un siluro vecchissimo, con i baffi lunghi come fruste. I siluri veri possono superare i 2 metri!'},
+    ]},
+  { id:'mare', name:'Molo sul mare', cost:400,
+    sky:['#6ec6ff','#e6f7ff'], water:['#1f7fc4','#0b3b6b'],
+    fish:[
+      {id:'sgombro', name:'Sgombro', min:.2, max:1, w:40, str:3, price:15, col:['#2f7f95','#eef3f5','#14384d'], pat:'waves',
+       fact:'Lo sgombro nuota in banchi enormi, con migliaia di compagni, e non smette quasi mai di muoversi.'},
+      {id:'orata', name:'Orata', min:.3, max:3, w:28, str:5, price:30, col:['#9aa8b0','#eef2f4','#e8b923'], pat:'band', tall:true,
+       fact:'L\'orata ha una striscia dorata tra gli occhi: è proprio da lì che viene il suo nome!'},
+      {id:'spigola', name:'Spigola', min:.5, max:5, w:22, str:6, price:28, col:['#7d8a96','#eef1f3','#4a5763'], pat:'plain',
+       fact:'Al nord la spigola la chiamano branzino: due nomi diversi, stesso pesce!'},
+      {id:'dentice', name:'Dentice', min:1, max:10, w:9, str:8, price:26, col:['#c27f73','#f6dfd6','#3a7fd0'], pat:'spots', tall:true,
+       fact:'Il dentice ha denti forti e robusti e vive vicino ai fondali rocciosi.'},
+      {id:'tonno', name:'Tonno rosso', min:80, max:250, w:1.6, str:10, price:3, col:['#1f3b66','#dfe7ee','#f5c518'], pat:'finlets', legend:true,
+       fact:'Il tonno rosso è un nuotatore velocissimo: attraversa interi mari e può pesare più di un pianoforte!'},
+    ]},
+];
+const ALL_FISH = PLACES.flatMap(p => p.fish);
+
+const UPGRADES = {
+  rod:  { ico:'🎣', title:'Canna', costs:[0,60,160,350,700],
+          names:['Canna di bambù','Canna in fibra','Canna in carbonio','Canna da campione','Canna d\'oro'],
+          desc:'Più resistente: la lenza si tende meno quando il pesce tira.' },
+  reel: { ico:'🌀', title:'Mulinello', costs:[0,50,140,300,600],
+          names:['Mulinello cigolante','Mulinello liscio','Mulinello veloce','Mulinello turbo','Mulinello d\'oro'],
+          desc:'Recuperi il filo più in fretta.' },
+  bait: { ico:'🪱', title:'Esca', costs:[0,40,120,260,520],
+          names:['Mollica di pane','Vermi','Camole','Esca artificiale','Esca segreta'],
+          desc:'I pesci abboccano prima, e arrivano più spesso quelli rari.' },
+};
+
+/* ---------------- SALVATAGGIO ---------------- */
+const SAVE_KEY = 'lenza-doro-v1';
+const DEFAULT_SAVE = { coins:0, rod:0, reel:0, bait:0, places:['torrente'], place:'torrente', album:{}, released:0, muted:false, seenIntro:false };
+let save = load();
+function load(){
+  try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s) return Object.assign({}, DEFAULT_SAVE, s); } catch(e){}
+  return Object.assign({}, DEFAULT_SAVE, {album:{}, places:['torrente']});
+}
+function persist(){ try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch(e){} }
+const place = () => PLACES.find(p => p.id === save.place) || PLACES[0];
+
+/* ---------------- AUDIO (sintetizzato) ---------------- */
+let AC = null;
+function audio(){ if (!AC) { try { AC = new (window.AudioContext||window.webkitAudioContext)(); } catch(e){} } if (AC && AC.state==='suspended') AC.resume(); return AC; }
+function tone(f, d, type='sine', vol=.15, slide=0, delay=0){
+  if (save.muted) return; const a = audio(); if (!a) return;
+  const t = a.currentTime + delay, o = a.createOscillator(), g = a.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + d);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + d);
+  o.connect(g).connect(a.destination); o.start(t); o.stop(t + d + .02);
+}
+function noise(d=.3, vol=.2, freq=1200){
+  if (save.muted) return; const a = audio(); if (!a) return;
+  const len = Math.floor(a.sampleRate * d), b = a.createBuffer(1, len, a.sampleRate), ch = b.getChannelData(0);
+  for (let i=0;i<len;i++) ch[i] = (Math.random()*2-1) * (1 - i/len);
+  const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+  s.buffer = b; f.type = 'lowpass'; f.frequency.value = freq; g.gain.value = vol;
+  s.connect(f).connect(g).connect(a.destination); s.start();
+}
+const SFX = {
+  cast(){ tone(500,.25,'triangle',.08,180); },
+  splash(){ noise(.35,.25,900); },
+  nibble(){ tone(900,.06,'sine',.06); },
+  bite(){ tone(660,.12,'square',.1); tone(990,.15,'square',.1,0,.12); },
+  click(){ tone(1300,.03,'square',.025); },
+  snap(){ tone(1400,.35,'sawtooth',.12,90); noise(.2,.15,3000); },
+  lose(){ tone(400,.25,'triangle',.1,200); tone(300,.35,'triangle',.1,150,.2); },
+  win(){ [523,659,784,1046].forEach((f,i)=>tone(f,.25,'triangle',.12,0,i*.11)); },
+  coin(){ tone(1200,.08,'square',.06); tone(1600,.12,'square',.06,0,.07); },
+  warn(){ tone(220,.08,'square',.05); },
+};
+
+/* ---------------- CANVAS ---------------- */
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+function fit(){ const d = Math.min(window.devicePixelRatio||1, 2); cv.width = W*d; cv.height = H*d; ctx.setTransform(d,0,0,d,0,0); }
+fit(); window.addEventListener('resize', fit);
+
+const rand = (a,b) => a + Math.random()*(b-a);
+const lerp = (a,b,t) => a + (b-a)*t;
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+
+/* ---------------- STATO DI GIOCO ---------------- */
+let S = 'idle', T = 0, now = 0;      // stato corrente e tempo trascorso nello stato
+let holding = false, uiOpen = false;
+let power = 0, castX = 0, castFrom = {x:0,y:0};
+let bob = {x:0, y:0, under:0};
+let waitT = 0, nibT = 0, nibble = 0, biteT = 0;
+let fish = null, kg = 0;
+let R = null;                         // stato del recupero
+let tip = {x:0,y:0};
+let particles = [], ripples = [], clouds = [], birds = [];
+let tmpMsg = {t:'', until:0};
+let reelTick = 0, warnTick = 0;
+
+for (let i=0;i<5;i++) clouds.push({x:rand(0,W), y:rand(30,140), s:rand(.6,1.3), v:rand(6,14)});
+for (let i=0;i<3;i++) birds.push({x:rand(0,W), y:rand(60,160), v:rand(20,40), p:rand(0,6)});
+
+function setState(s){ S = s; T = 0; }
+function say(t, d=2.2){ tmpMsg = {t, until: now + d}; }
+
+function seat(){ // punto dove siede il personaggio (dipende dal luogo)
+  const id = place().id;
+  if (id==='torrente') return {x:150, y:292};
+  if (id==='lago') return {x:160, y:300};
+  return {x:165, y:290};
+}
+
+/* ---------------- INPUT ---------------- */
+function press(){
+  audio();
+  if (uiOpen) return;
+  holding = true;
+  if (S==='idle'){ setState('charge'); }
+  else if (S==='wait'){
+    if (nibble > 0) say('Era solo un assaggio! Aspetta che il galleggiante vada SOTTO 👀');
+    else say('Shh... aspetta che abbocchi!');
+    waitT += 1.2;
+  }
+  else if (S==='bite'){ startReel(); }
+}
+function release(){
+  holding = false;
+  if (S==='charge'){ doCast(); }
+}
+cv.addEventListener('pointerdown', e => { e.preventDefault(); press(); });
+window.addEventListener('pointerup', release);
+window.addEventListener('pointercancel', release);
+cv.addEventListener('contextmenu', e => e.preventDefault());
+window.addEventListener('keydown', e => { if (e.code==='Space'){ e.preventDefault(); if (!e.repeat) press(); } });
+window.addEventListener('keyup', e => { if (e.code==='Space'){ e.preventDefault(); release(); } });
+
+/* ---------------- LOGICA ---------------- */
+function doCast(){
+  castX = 300 + power * 600;
+  castFrom = {x: tip.x, y: tip.y};
+  SFX.cast();
+  setState('cast');
+}
+
+function pickFish(){
+  const list = place().fish;
+  const ws = list.map(f => {
+    let w = f.w;
+    if (f.w < 12) w *= (0.5 + power*1.5) * (1 + save.bait*0.35);   // i rari amano i lanci lunghi
+    if (f.legend && power < 0.55) w = 0;                           // i leggendari stanno al largo
+    return w;
+  });
+  let r = Math.random() * ws.reduce((a,b)=>a+b, 0);
+  for (let i=0;i<list.length;i++){ r -= ws[i]; if (r <= 0) return list[i]; }
+  return list[0];
+}
+function rollWeight(f){
+  const e = Math.max(1.1, 2.2 - power*0.7 - save.bait*0.12);
+  const v = f.min + (f.max - f.min) * Math.pow(Math.random(), e);
+  return v >= 10 ? Math.round(v*10)/10 : Math.round(v*100)/100;
+}
+
+function startReel(){
+  SFX.bite();
+  R = { dist:100, ten:30, run:false, runT:rand(1.2,2.2), slack:0, over:0, sway:0 };
+  setState('reel');
+}
+
+function lose(text, snapped){
+  if (snapped) SFX.snap(); else SFX.lose();
+  say(text, 2.6);
+  ripples.push({x:bob.x, y:WATER, r:4, a:1});
+  setState('lost');
+}
+
+function catchFish(){
+  SFX.win();
+  for (let i=0;i<30;i++) particles.push({x:bob.x, y:WATER, vx:rand(-160,160), vy:rand(-320,-120), life:1, c:'#bfe9ff', r:rand(2,5)});
+  setState('caught');
+  showCard();
+}
+
+function update(dt){
+  now += dt; T += dt;
+  const st = seat();
+
+  // tip della canna: si piega con la tensione
+  const bend = S==='reel' ? R.ten * 0.55 : (S==='bite' ? 25 : 0);
+  if (S==='charge'){ tip = {x: st.x + 70, y: st.y - 175}; }
+  else tip = {x: st.x + 150 - bend*0.35, y: st.y - 150 + bend};
+
+  if (S==='charge'){
+    const p = (T * 0.9) % 2; power = p < 1 ? p : 2 - p;     // barra che va avanti e indietro
+  }
+  else if (S==='cast'){
+    const p = clamp(T / 0.85, 0, 1);
+    bob.x = lerp(castFrom.x, castX, p);
+    bob.y = lerp(castFrom.y, WATER, p) - Math.sin(p*Math.PI) * 130;
+    if (p >= 1){
+      SFX.splash();
+      for (let i=0;i<14;i++) particles.push({x:castX, y:WATER, vx:rand(-80,80), vy:rand(-200,-60), life:1, c:'#d6f3ff', r:rand(2,4)});
+      ripples.push({x:castX, y:WATER, r:4, a:1});
+      bob.x = castX; bob.y = WATER; bob.under = 0;
+      waitT = rand(2, 5) * (1 - save.bait*0.13);
+      nibT = rand(.6, 1.5); nibble = 0;
+      setState('wait');
+    }
+  }
+  else if (S==='wait'){
+    if (place().id==='torrente') bob.x -= dt * 4;   // la corrente trascina un po'
+    waitT -= dt; nibT -= dt; nibble = Math.max(0, nibble - dt);
+    if (nibT <= 0 && waitT > 0.6){ nibble = .25; nibT = rand(.7, 1.8); SFX.nibble(); ripples.push({x:bob.x, y:WATER, r:3, a:.7}); }
+    bob.y = WATER + Math.sin(now*3)*1.5 + (nibble>0 ? 5 : 0);
+    if (waitT <= 0){
+      fish = pickFish(); kg = rollWeight(fish);
+      biteT = 1.05 + save.bait*0.08;
+      SFX.bite();
+      for (let i=0;i<10;i++) particles.push({x:bob.x, y:WATER, vx:rand(-90,90), vy:rand(-180,-60), life:1, c:'#d6f3ff', r:rand(2,4)});
+      setState('bite');
+    }
+  }
+  else if (S==='bite'){
+    bob.y = WATER + 14 + Math.sin(now*30)*2;
+    if (T > biteT){ lose('Troppo tardi! Ha mangiato l\'esca ed è scappato 😅'); }
+  }
+  else if (S==='reel'){
+    const str = fish.str;
+    R.runT -= dt;
+    if (R.runT <= 0){
+      R.run = !R.run;
+      R.runT = R.run ? rand(.6, 1.1 + str*.08) : rand(2.6 - str*.13, 4.2 - str*.2);
+      if (R.run){ for (let i=0;i<12;i++) particles.push({x:bob.x, y:WATER, vx:rand(-120,120), vy:rand(-260,-80), life:1, c:'#e9f8ff', r:rand(2,5)}); SFX.splash(); }
+    }
+    const rodK = save.rod * 6;
+    const reelSpeed = (20 + save.reel*4) * (1.15 - str*0.05);
+    if (holding){
+      const target = R.run ? 70 + str*8 - rodK : 22 + str*4 - rodK;
+      R.ten += (target - R.ten) * (R.run ? 4.5 : 2.2) * dt + (Math.random()-.5) * 30 * dt;
+      R.dist += R.run ? str*0.6*dt : -reelSpeed*dt;
+      reelTick -= dt; if (reelTick <= 0){ SFX.click(); reelTick = .07; }
+    } else {
+      R.ten += (0 - R.ten) * 2.5 * dt;
+      R.dist += (R.run ? str*1.4 : 0.6) * dt;
+    }
+    R.ten = clamp(R.ten, 0, 110);
+    R.dist = Math.min(R.dist, 100);
+    R.sway += dt * (R.run ? 9 : 3);
+
+    if (R.ten >= 100){ R.over += dt; warnTick -= dt; if (warnTick<=0){ SFX.warn(); warnTick=.12; } }
+    else R.over = Math.max(0, R.over - dt);
+    if (R.ten < 8) R.slack += dt; else R.slack = Math.max(0, R.slack - dt*2);
+
+    const endX = seat().x + 70;
+    bob.x = endX + (castX - endX) * (R.dist/100) + Math.sin(R.sway)*(R.run?14:5);
+    bob.y = WATER + 6 + Math.sin(R.sway*1.3)*3;
+
+    if (R.over > 0.45) lose('La lenza si è spezzata! 💥 Quando il pesce tira, MOLLA!', true);
+    else if (R.slack > 3.5) lose('Lenza troppo molle: il pesce si è liberato! 🐟');
+    else if (R.dist <= 0) catchFish();
+  }
+  else if (S==='lost'){
+    if (T > 1.6) setState('idle');
+  }
+
+  // effetti
+  particles.forEach(p => { p.vy += 600*dt; p.x += p.vx*dt; p.y += p.vy*dt; p.life -= dt*1.4; });
+  particles = particles.filter(p => p.life > 0 && p.y < WATER + 8);
+  ripples.forEach(r => { r.r += 40*dt; r.a -= dt*0.9; });
+  ripples = ripples.filter(r => r.a > 0);
+  if (S==='reel' && Math.random() < dt*3) ripples.push({x:bob.x, y:WATER, r:3, a:.6});
+  clouds.forEach(c => { c.x += c.v*dt; if (c.x > W+120) c.x = -120; });
+  birds.forEach(b => { b.x += b.v*dt; b.p += dt*8; if (b.x > W+30){ b.x = -30; b.y = rand(50,170); } });
+}
+
+/* ---------------- DISEGNO ---------------- */
+function draw(){
+  const pl = place(), st = seat();
+  // cielo
+  let g = ctx.createLinearGradient(0,0,0,WATER);
+  g.addColorStop(0, pl.sky[0]); g.addColorStop(1, pl.sky[1]);
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,WATER);
+  // sole
+  ctx.fillStyle = pl.id==='lago' ? '#ffb347' : '#fff3a8';
+  ctx.beginPath(); ctx.arc(pl.id==='lago'?760:820, pl.id==='lago'?200:80, pl.id==='lago'?48:36, 0, Math.PI*2); ctx.fill();
+  // nuvole
+  ctx.fillStyle = '#ffffffd9';
+  clouds.forEach(c => { ctx.beginPath(); ctx.ellipse(c.x, c.y, 50*c.s, 16*c.s, 0, 0, Math.PI*2); ctx.ellipse(c.x+28*c.s, c.y-10*c.s, 30*c.s, 16*c.s, 0, 0, Math.PI*2); ctx.ellipse(c.x-26*c.s, c.y-6*c.s, 24*c.s, 12*c.s, 0, 0, Math.PI*2); ctx.fill(); });
+
+  // sfondo per luogo
+  if (pl.id==='torrente') drawMountains();
+  else if (pl.id==='lago') drawHills();
+  else drawSea();
+
+  // uccelli
+  ctx.strokeStyle = '#2b3a46'; ctx.lineWidth = 2;
+  birds.forEach(b => { const f = Math.sin(b.p)*5; ctx.beginPath(); ctx.moveTo(b.x-9, b.y-f); ctx.quadraticCurveTo(b.x-4, b.y-4, b.x, b.y); ctx.quadraticCurveTo(b.x+4, b.y-4, b.x+9, b.y-f); ctx.stroke(); });
+
+  // acqua
+  g = ctx.createLinearGradient(0,WATER,0,H);
+  g.addColorStop(0, pl.water[0]); g.addColorStop(1, pl.water[1]);
+  ctx.fillStyle = g; ctx.fillRect(0, WATER, W, H-WATER);
+  drawWaves(pl);
+
+  // ombra del pesce che si avvicina
+  if (S==='wait' && waitT < 1.6){
+    const a = (1.6 - waitT) / 1.6;
+    ctx.globalAlpha = a * .35; ctx.fillStyle = '#0a1a22';
+    ctx.beginPath(); ctx.ellipse(bob.x + waitT*90, WATER + 40, 34, 10, 0, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  // pesce sott'acqua durante il recupero
+  if (S==='reel'){
+    const L = fish.legend ? 130 : 40 + Math.min(1, kg/fish.max) * 45;
+    drawFish(ctx, bob.x + 18, WATER + 30 + L*0.1, L, fish, {dir:1, wig:R.sway*2, sil:true, alpha:.45});
+  }
+
+  // increspature
+  ripples.forEach(r => { ctx.strokeStyle = `rgba(255,255,255,${r.a*.7})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(r.x, r.y+2, r.r, r.r*.3, 0, 0, Math.PI*2); ctx.stroke(); });
+
+  // appoggio + personaggio
+  drawStand(pl, st);
+  drawKid(st);
+
+  // filo e galleggiante
+  drawLine();
+
+  // particelle
+  particles.forEach(p => { ctx.globalAlpha = clamp(p.life,0,1); ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill(); });
+  ctx.globalAlpha = 1;
+
+  // interfaccia nel canvas
+  if (S==='charge') drawPower(st);
+  if (S==='bite') drawBang(st);
+  if (S==='reel') drawReelUI();
+  ctx.font = '700 15px ' + getComputedStyle(document.body).fontFamily;
+  ctx.fillStyle = '#ffffffcc'; ctx.textAlign = 'right';
+  ctx.fillText(pl.name, W - 14, H - 14);
+}
+
+function drawMountains(){
+  const m = [[-40,320,180,120],[120,320,330,90],[300,320,520,140],[480,320,700,100],[660,320,1000,130]];
+  m.forEach(([a,b,c,top],i) => {
+    const mx = (a+c)/2;
+    ctx.fillStyle = i%2 ? '#7d8fa3' : '#6a7d92';
+    ctx.beginPath(); ctx.moveTo(a,b); ctx.lineTo(mx, top); ctx.lineTo(c,b); ctx.fill();
+    ctx.fillStyle = '#f4f8fb';
+    ctx.beginPath(); ctx.moveTo(mx, top); ctx.lineTo(mx-28, top+30); ctx.lineTo(mx-8, top+24); ctx.lineTo(mx+6, top+34); ctx.lineTo(mx+28, top+30); ctx.closePath(); ctx.fill();
+  });
+  for (let i=0;i<22;i++){ const x = i*46 + (i%3)*9, h = 40 + (i*17)%30; drawPine(x, WATER+2, h); }
+  // rocce a destra
+  ctx.fillStyle = '#7b7f84';
+  ctx.beginPath(); ctx.ellipse(880, WATER+6, 70, 24, 0, Math.PI, 0); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(800, WATER+8, 34, 14, 0, Math.PI, 0); ctx.fill();
+}
+function drawPine(x, base, h){
+  ctx.fillStyle = '#5b3b22'; ctx.fillRect(x-2, base-8, 4, 8);
+  ctx.fillStyle = '#2f6b45';
+  for (let k=0;k<3;k++){ const y = base - 8 - k*h*0.28; const w = (3-k)*7 + 4; ctx.beginPath(); ctx.moveTo(x-w, y); ctx.lineTo(x, y - h*0.45); ctx.lineTo(x+w, y); ctx.fill(); }
+}
+function drawHills(){
+  ctx.fillStyle = '#8bbf6a'; ctx.beginPath(); ctx.moveTo(0, WATER);
+  for (let x=0;x<=W;x+=20) ctx.lineTo(x, WATER - 60 - Math.sin(x/140)*28 - Math.sin(x/53)*8);
+  ctx.lineTo(W, WATER); ctx.fill();
+  ctx.fillStyle = '#6fa856'; ctx.beginPath(); ctx.moveTo(0, WATER);
+  for (let x=0;x<=W;x+=20) ctx.lineTo(x, WATER - 26 - Math.sin(x/90+2)*14);
+  ctx.lineTo(W, WATER); ctx.fill();
+  // casetta
+  ctx.fillStyle = '#f2e3c6'; ctx.fillRect(610, WATER-74, 34, 24);
+  ctx.fillStyle = '#c0392b'; ctx.beginPath(); ctx.moveTo(604, WATER-74); ctx.lineTo(627, WATER-92); ctx.lineTo(650, WATER-74); ctx.fill();
+  // canneto in primo piano
+  for (let i=0;i<26;i++){
+    const x = 820 + i*6 + (i%3)*3, h = 60 + (i*13)%40, sw = Math.sin(now*1.4 + i)*4;
+    ctx.strokeStyle = '#4f7f2e'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(x, WATER+20); ctx.quadraticCurveTo(x+sw*.5, WATER+20-h*.5, x+sw, WATER+20-h); ctx.stroke();
+    if (i%3===0){ ctx.fillStyle = '#7a4a24'; ctx.beginPath(); ctx.ellipse(x+sw, WATER+14-h, 4, 11, 0, 0, Math.PI*2); ctx.fill(); }
+  }
+}
+function drawSea(){
+  // isola lontana
+  ctx.fillStyle = '#8fb8c9';
+  ctx.beginPath(); ctx.moveTo(560, WATER); ctx.quadraticCurveTo(640, WATER-50, 720, WATER-12); ctx.quadraticCurveTo(760, WATER-20, 800, WATER); ctx.fill();
+  // barca a vela
+  const bx = 380 + Math.sin(now*.2)*40;
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(bx, WATER-6); ctx.lineTo(bx, WATER-50); ctx.lineTo(bx+26, WATER-8); ctx.fill();
+  ctx.fillStyle = '#e74c3c'; ctx.beginPath(); ctx.moveTo(bx-20, WATER-6); ctx.lineTo(bx+34, WATER-6); ctx.lineTo(bx+26, WATER+2); ctx.lineTo(bx-12, WATER+2); ctx.fill();
+  // faro su uno scoglio lontano
+  ctx.fillStyle = '#6d7b84'; ctx.beginPath(); ctx.ellipse(909, WATER, 34, 14, 0, Math.PI, 0); ctx.fill();
+  ctx.fillStyle = '#f4f4f4'; ctx.fillRect(900, WATER-80, 18, 72);
+  ctx.fillStyle = '#e74c3c'; ctx.fillRect(900, WATER-60, 18, 12); ctx.fillRect(900, WATER-30, 18, 12);
+  ctx.fillStyle = '#ffe680'; ctx.fillRect(898, WATER-92, 22, 12);
+}
+function drawWaves(pl){
+  ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 2;
+  const speed = pl.id==='torrente' ? -70 : 10;
+  for (let row=0; row<7; row++){
+    const y = WATER + 14 + row*30, off = ((now*speed*(1+row*.15)) % 120 + 120) % 120;
+    for (let x=-120 + off + (row%2)*60; x<W; x+=120){
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x+12, y-4, x+24 + row*3, y); ctx.stroke();
+    }
+  }
+}
+
+function drawStand(pl, st){
+  if (pl.id==='torrente'){
+    ctx.fillStyle = '#8a8e94'; ctx.beginPath(); ctx.ellipse(110, st.y+40, 150, 52, 0, Math.PI, 0); ctx.lineTo(260, WATER+30); ctx.lineTo(-40, WATER+30); ctx.fill();
+    ctx.fillStyle = '#a3a8ae'; ctx.beginPath(); ctx.ellipse(90, st.y+22, 90, 24, 0, Math.PI, 0); ctx.fill();
+    ctx.fillStyle = '#6aa04a'; ctx.beginPath(); ctx.ellipse(40, st.y+6, 40, 10, 0, Math.PI, 0); ctx.fill();
+  } else if (pl.id==='lago'){
+    ctx.fillStyle = '#7a4f2c';
+    [30, 110, 200].forEach(x => ctx.fillRect(x, st.y+10, 10, WATER - st.y + 30));
+    ctx.fillStyle = '#b07a46'; ctx.fillRect(0, st.y, 230, 14);
+    ctx.strokeStyle = '#7a4f2c'; ctx.lineWidth = 2;
+    for (let x=0;x<230;x+=26){ ctx.beginPath(); ctx.moveTo(x, st.y); ctx.lineTo(x, st.y+14); ctx.stroke(); }
+  } else {
+    ctx.fillStyle = '#9aa3a8'; ctx.fillRect(0, st.y, 240, WATER - st.y + 40);
+    ctx.fillStyle = '#b8c0c4'; ctx.fillRect(0, st.y, 240, 10);
+    ctx.strokeStyle = '#7d868b'; ctx.lineWidth = 2;
+    ctx.save(); ctx.beginPath(); ctx.rect(0, st.y, 240, WATER - st.y + 40); ctx.clip();
+    for (let y=st.y+10, r=0; y<WATER+40; y+=18, r++) for (let x=(r%2)*-20; x<240; x+=40){ ctx.strokeRect(x, y, 40, 18); }
+    ctx.restore();
+    // secchio
+    ctx.fillStyle = '#2e86de'; ctx.beginPath(); ctx.moveTo(56, st.y); ctx.lineTo(60, st.y-26); ctx.lineTo(86, st.y-26); ctx.lineTo(90, st.y); ctx.fill();
+  }
+}
+
+function drawKid(st){
+  const x = st.x, y = st.y;
+  const hand = {x: x + 26, y: y - 28 + (S==='reel' && holding ? Math.sin(now*25)*2 : 0)};
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  // gambe penzoloni
+  const swing = Math.sin(now*2)*4;
+  ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 9;
+  ctx.beginPath(); ctx.moveTo(x-6, y-4); ctx.lineTo(x+12, y-2); ctx.lineTo(x+16+swing, y+26); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x-2, y-4); ctx.lineTo(x+18, y-2); ctx.lineTo(x+24-swing, y+24); ctx.stroke();
+  ctx.fillStyle = '#f5f5f5'; ctx.strokeStyle = '#1d2b36'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.ellipse(x+20+swing, y+30, 8, 5, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(x+28-swing, y+28, 8, 5, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  // busto (maglia a righe)
+  ctx.fillStyle = '#2e86de'; ctx.strokeStyle = '#1d2b36'; ctx.lineWidth = 2.5;
+  roundRect(x-16, y-50, 28, 48, 10); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(x-14, y-36, 24, 5); ctx.fillRect(x-14, y-24, 24, 5);
+  // braccio
+  ctx.strokeStyle = '#2e86de'; ctx.lineWidth = 8;
+  ctx.beginPath(); ctx.moveTo(x-2, y-42); ctx.lineTo(x+10, y-30); ctx.lineTo(hand.x, hand.y); ctx.stroke();
+  ctx.fillStyle = '#f2c6a0'; ctx.beginPath(); ctx.arc(hand.x, hand.y, 5, 0, Math.PI*2); ctx.fill();
+  // testa
+  const hx = x - 2, hy = y - 66;
+  ctx.fillStyle = '#5a3a1e'; ctx.beginPath(); ctx.arc(hx-7, hy-3, 14, 0, Math.PI*2); ctx.fill(); // capelli dietro
+  ctx.fillStyle = '#f2c6a0'; ctx.strokeStyle = '#1d2b36'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.arc(hx, hy, 16, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#5a3a1e'; ctx.beginPath(); ctx.arc(hx-10, hy-2, 8, Math.PI*.5, Math.PI*1.5); ctx.fill(); // basetta
+  // occhio (sbatte le palpebre)
+  ctx.fillStyle = '#1d2b36';
+  if ((now % 3.5) < 3.35) { ctx.beginPath(); ctx.arc(hx+8, hy-1, 2.6, 0, Math.PI*2); ctx.fill(); }
+  else ctx.fillRect(hx+5, hy-1, 6, 2);
+  ctx.fillStyle = '#ff9f8a'; ctx.beginPath(); ctx.arc(hx+6, hy+7, 3.5, 0, Math.PI*2); ctx.fill();
+  // bocca
+  ctx.strokeStyle = '#1d2b36'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  if (S==='caught') ctx.arc(hx+9, hy+7, 4, 0, Math.PI);
+  else if (S==='lost') ctx.arc(hx+9, hy+11, 3, Math.PI, 0);
+  else if (S==='reel' || S==='bite') ctx.ellipse(hx+11, hy+8, 2, 3, 0, 0, Math.PI*2);
+  else { ctx.moveTo(hx+7, hy+8); ctx.lineTo(hx+13, hy+7); }
+  ctx.stroke();
+  // berretto verde con visiera
+  ctx.fillStyle = '#27ae60'; ctx.strokeStyle = '#1d2b36';
+  ctx.beginPath(); ctx.arc(hx, hy-4, 16, Math.PI*1.05, Math.PI*1.95); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(hx+16, hy-6, 12, 4, -.1, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#f5b82e'; ctx.beginPath(); ctx.arc(hx-2, hy-19, 3, 0, Math.PI*2); ctx.fill();
+
+  // canna
+  const back = {x: hand.x - 18, y: hand.y + 14};
+  const ctrl = {x: lerp(hand.x, tip.x, .55), y: lerp(hand.y, tip.y, .55) - 10 + (S==='reel' ? R.ten*0.25 : 0)};
+  ctx.strokeStyle = '#6b4423'; ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.moveTo(back.x, back.y); ctx.lineTo(hand.x, hand.y); ctx.stroke();
+  ctx.strokeStyle = save.rod >= 4 ? '#d4a017' : ['#c8a165','#4a6fa5','#333','#8e44ad','#d4a017'][save.rod]; ctx.lineWidth = 3.5;
+  ctx.beginPath(); ctx.moveTo(hand.x, hand.y); ctx.quadraticCurveTo(ctrl.x, ctrl.y, tip.x, tip.y); ctx.stroke();
+  // mulinello
+  ctx.fillStyle = '#95a5a6'; ctx.strokeStyle = '#1d2b36'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(hand.x - 8, hand.y + 10, 6, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  if (S==='reel' && holding){ const a = now*20; ctx.beginPath(); ctx.moveTo(hand.x-8, hand.y+10); ctx.lineTo(hand.x-8+Math.cos(a)*7, hand.y+10+Math.sin(a)*7); ctx.stroke(); }
+}
+
+function drawLine(){
+  ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 1.3;
+  let bx, by;
+  if (S==='idle' || S==='charge' || S==='lost'){
+    bx = tip.x + Math.sin(now*2)*3; by = tip.y + (S==='lost' ? 40 : 70);
+    ctx.beginPath(); ctx.moveTo(tip.x, tip.y); ctx.lineTo(bx, by); ctx.stroke();
+    if (S==='lost') return;
+  } else {
+    bx = bob.x; by = bob.y;
+    const sag = S==='reel' ? (1 - R.ten/100) * 70 : (S==='cast' ? 10 : 45);
+    ctx.beginPath(); ctx.moveTo(tip.x, tip.y);
+    ctx.quadraticCurveTo((tip.x+bx)/2, Math.max(tip.y, by) + sag - (by-tip.y)*0.15, bx, by - 6); ctx.stroke();
+  }
+  // galleggiante
+  const under = S==='bite';
+  ctx.save();
+  if (!under && S!=='cast' && S!=='idle' && S!=='charge'){ ctx.beginPath(); ctx.rect(0,0,W,WATER+3); ctx.clip(); }
+  ctx.strokeStyle = '#1d2b36'; ctx.lineWidth = 1.5;
+  ctx.fillStyle = '#e74c3c'; ctx.beginPath(); ctx.arc(bx, by-4, 7, Math.PI, 0); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(bx, by-4, 7, 0, Math.PI); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = '#1d2b36'; ctx.beginPath(); ctx.moveTo(bx, by-11); ctx.lineTo(bx, by-17); ctx.stroke();
+  ctx.restore();
+  if (under){ ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.beginPath(); ctx.arc(bx, by-4, 8, 0, Math.PI*2); ctx.fill(); }
+}
+
+function drawPower(st){
+  const x = st.x - 70, y = st.y - 130, w = 170, h = 20;
+  ctx.fillStyle = '#1d2b36'; roundRect(x-4, y-4, w+8, h+8, 10); ctx.fill();
+  const g = ctx.createLinearGradient(x,0,x+w,0);
+  g.addColorStop(0,'#2ecc71'); g.addColorStop(.6,'#f1c40f'); g.addColorStop(1,'#e74c3c');
+  ctx.fillStyle = g; roundRect(x, y, w*power, h, 7); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font = '800 14px ' + getComputedStyle(document.body).fontFamily; ctx.textAlign = 'center';
+  ctx.fillText('FORZA DEL LANCIO', x + w/2, y - 10);
+}
+function drawBang(st){
+  const x = st.x + 10, y = st.y - 120, s = 1 + Math.sin(now*20)*.08;
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.fillStyle = '#f5b82e'; ctx.strokeStyle = '#1d2b36'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(0, 0, 24, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#1d2b36'; ctx.font = '800 34px ' + getComputedStyle(document.body).fontFamily; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('!', 0, 2); ctx.textBaseline = 'alphabetic';
+  ctx.restore();
+}
+function drawReelUI(){
+  const font = getComputedStyle(document.body).fontFamily;
+  // barra tensione verticale
+  const x = 880, y = 70, w = 30, h = 300;
+  ctx.fillStyle = '#1d2b36'; roundRect(x-5, y-5, w+10, h+10, 12); ctx.fill();
+  const zones = [[0,60,'#2ecc71'],[60,85,'#f1c40f'],[85,100,'#e74c3c']];
+  zones.forEach(([a,b,c]) => { ctx.fillStyle = c; ctx.fillRect(x, y + h*(1-b/100), w, h*(b-a)/100); });
+  const ty = y + h*(1 - Math.min(R.ten,100)/100);
+  const flash = R.ten >= 85 && Math.floor(now*10)%2;
+  ctx.fillStyle = flash ? '#fff' : '#1d2b36';
+  ctx.beginPath(); ctx.moveTo(x-14, ty-8); ctx.lineTo(x-2, ty); ctx.lineTo(x-14, ty+8); ctx.fill();
+  ctx.fillRect(x, ty-2, w, 4);
+  ctx.save(); ctx.translate(x + w + 22, y + h/2); ctx.rotate(-Math.PI/2);
+  ctx.fillStyle = '#fff'; ctx.font = '800 16px ' + font; ctx.textAlign = 'center'; ctx.fillText('TENSIONE', 0, 0);
+  ctx.restore();
+
+  // barra distanza
+  const dx = 330, dy = 70, dw = 300, dh = 16;
+  ctx.fillStyle = '#1d2b36'; roundRect(dx-4, dy-4, dw+8, dh+8, 10); ctx.fill();
+  ctx.fillStyle = '#7fd3ff'; roundRect(dx, dy, dw*(1-R.dist/100), dh, 6); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font = '800 15px ' + font; ctx.textAlign = 'center';
+  ctx.fillText('🐟 ' + (R.run ? 'SI DIBATTE!' : 'in arrivo...'), dx + dw/2, dy - 10);
+  ctx.textAlign = 'left'; ctx.fillText('🧒', dx - 30, dy + 14);
+}
+function roundRect(x,y,w,h,r){ w = Math.max(w, 0); r = Math.min(r, w/2, h/2); ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+/* ---- disegno di un pesce (usato in gioco, nella scheda e nell'album) ---- */
+function drawFish(c, x, y, L, f, o={}){
+  const dir = o.dir || 1, wig = o.wig || 0;
+  const h = L * (f.tall ? .44 : f.long ? .24 : .32);
+  const sil = !!o.sil;
+  const body = sil ? '#13222c' : f.col[0], belly = sil ? '#13222c' : f.col[1], acc = sil ? '#13222c' : f.col[2];
+  c.save(); c.translate(x, y); c.scale(dir, 1); c.globalAlpha = o.alpha ?? 1;
+  c.lineJoin = 'round';
+  if (f.legend && !sil){ c.shadowColor = '#ffd84a'; c.shadowBlur = L*.12; }
+  const tw = Math.sin(wig) * h * .25;
+  // coda
+  c.fillStyle = body;
+  c.beginPath(); c.moveTo(-L*.36, 0); c.lineTo(-L*.56, -h*.6 + tw); c.quadraticCurveTo(-L*.47, tw, -L*.56, h*.6 + tw); c.closePath(); c.fill();
+  // pinna dorsale
+  const df = f.sail ? 1.5 : .55;
+  c.beginPath(); c.moveTo(-L*.18, -h*.4); c.quadraticCurveTo(-L*.02, -h*(.5 + df), L*.14, -h*.42); c.closePath(); c.fill();
+  // pinna ventrale
+  c.beginPath(); c.moveTo(-L*.05, h*.42); c.lineTo(-L*.14, h*.72); c.lineTo(L*.06, h*.45); c.closePath(); c.fill();
+  // corpo
+  c.beginPath(); c.ellipse(0, 0, L*.42, h*.5, 0, 0, Math.PI*2); c.fill();
+  c.shadowBlur = 0;
+  if (!sil){
+    c.save(); c.clip();
+    c.fillStyle = belly; c.beginPath(); c.ellipse(0, h*.34, L*.44, h*.3, 0, 0, Math.PI*2); c.fill();
+    c.fillStyle = acc;
+    if (f.pat==='spots'){ for (let i=0;i<12;i++){ c.fillStyle = (f.dots2 && i%3===1) ? f.dots2 : acc; c.beginPath(); c.arc(-L*.28 + ((i*37)%60)/60*L*.52, -h*.32 + ((i*53)%40)/40*h*.45, h*.06, 0, Math.PI*2); c.fill(); } }
+    if (f.pat==='stripes'){ c.globalAlpha *= .7; for (let i=0;i<6;i++) c.fillRect(-L*.28 + i*L*.1, -h*.5, L*.04, h*.7); }
+    if (f.pat==='waves'){ c.strokeStyle = acc; c.lineWidth = Math.max(1, h*.05); for (let i=0;i<6;i++){ const sx = -L*.3 + i*L*.09; c.beginPath(); c.moveTo(sx, -h*.45); c.quadraticCurveTo(sx+L*.04, -h*.25, sx, -h*.08); c.stroke(); } }
+    if (f.pat==='band'){ c.fillRect(L*.25, -h*.5, L*.04, h*.55); }
+    if (f.pat==='scales'){ c.strokeStyle = acc; c.lineWidth = Math.max(1, h*.03); for (let r=0;r<3;r++) for (let i=0;i<6;i++){ c.beginPath(); c.arc(-L*.25 + i*L*.08 + (r%2)*L*.04, -h*.25 + r*h*.2, h*.1, -Math.PI/2, Math.PI/2); c.stroke(); } }
+    if (f.pat==='finlets'){ for (let i=0;i<6;i++){ c.beginPath(); c.moveTo(-L*.36 + i*L*.03, -h*.38); c.lineTo(-L*.35 + i*L*.03, -h*.5); c.lineTo(-L*.34 + i*L*.03, -h*.36); c.fill(); } c.fillRect(-L*.3, h*.05, L*.5, h*.05); }
+    c.restore();
+    // branchia, occhio, bocca
+    c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = Math.max(1, L*.012);
+    c.beginPath(); c.arc(L*.2, 0, h*.35, -Math.PI*.4, Math.PI*.4); c.stroke();
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(L*.3, -h*.1, h*.12, 0, Math.PI*2); c.fill();
+    c.fillStyle = '#111'; c.beginPath(); c.arc(L*.31, -h*.1, h*.065, 0, Math.PI*2); c.fill();
+    c.strokeStyle = 'rgba(0,0,0,.5)'; c.beginPath(); c.moveTo(L*.42, h*.08); c.lineTo(L*.36, h*.12); c.stroke();
+    if (f.barbels){ c.strokeStyle = acc; c.lineWidth = Math.max(1, L*.01); c.beginPath(); c.moveTo(L*.4, h*.12); c.quadraticCurveTo(L*.48, h*.4, L*.42, h*(f.legend?.9:.5)); c.moveTo(L*.38, h*.14); c.quadraticCurveTo(L*.4, h*.45, L*.33, h*(f.legend?.85:.55)); c.stroke(); }
+  }
+  c.restore();
+}
+
+/* ---------------- MESSAGGI ---------------- */
+const msgEl = document.getElementById('msg');
+let lastMsg = '';
+function hintText(){
+  if (now < tmpMsg.until) return tmpMsg.t;
+  const key = matchMedia('(pointer:fine)').matches ? 'Tieni premuto (o SPAZIO)' : 'Tieni premuto';
+  switch (S){
+    case 'idle': return `🎣 ${key} per caricare il lancio, poi lascia!`;
+    case 'charge': return 'Lascia andare per lanciare! Più lontano = pesci più rari ⭐';
+    case 'cast': return 'Vola!';
+    case 'wait': return '👀 Aspetta... quando il galleggiante va SOTTO, clicca!';
+    case 'bite': return '❗ ABBOCCA! CLICCA SUBITO!';
+    case 'reel':
+      if (R.ten >= 85) return '🔥 TROPPO TESA! MOLLA!';
+      if (R.slack > 1.2) return '😴 Lenza molle: tieni premuto e recupera!';
+      if (R.run) return '🐟 Si dibatte! Molla un attimo!';
+      return holding ? '🌀 Recupera, recupera...' : `${key} per recuperare il filo`;
+    default: return '';
+  }
+}
+
+/* ---------------- PANNELLI ---------------- */
+const overlay = document.getElementById('overlay'), panel = document.getElementById('panel');
+function openPanel(html, closable=true){
+  uiOpen = true; holding = false;
+  panel.innerHTML = (closable ? '<button class="close" id="xClose">✕</button>' : '') + html;
+  overlay.classList.add('show');
+  if (closable) document.getElementById('xClose').onclick = closePanel;
+  panel.scrollTop = 0;
+}
+function closePanel(){ overlay.classList.remove('show'); uiOpen = false; refreshHud(); }
+overlay.addEventListener('pointerdown', e => { if (e.target === overlay && S!=='caught' && save.seenIntro) closePanel(); });
+
+function fishCanvas(f, w, h, sil){
+  const c = document.createElement('canvas'); const d = Math.min(window.devicePixelRatio||1, 2);
+  c.width = w*d; c.height = h*d; const x = c.getContext('2d'); x.scale(d,d);
+  drawFish(x, w/2, h/2 + 4, w*.78, f, {sil}); return c;
+}
+
+function showCard(){
+  const a = save.album[fish.id];
+  const isNew = !a, isRecord = a && kg > a.best;
+  const value = Math.max(1, Math.round(kg * fish.price));
+  const relValue = Math.ceil(value / 2);
+  openPanel(`
+    <div class="card">
+      <div>${isNew ? '<span class="badge">NUOVO!</span>' : ''}${isRecord ? '<span class="badge red">RECORD!</span>' : ''}${fish.legend ? '<span class="badge">⭐ LEGGENDARIO ⭐</span>' : ''}</div>
+      <div id="cardFish"></div>
+      <h2>${fish.name}</h2>
+      <div class="kg">⚖️ ${kg.toLocaleString('it-IT')} kg &nbsp; · &nbsp; 🪙 ${value}</div>
+      <p class="fact">💡 ${fish.fact}</p>
+      <div class="row">
+        <button class="big" id="keep">🧺 Tienilo (+${value} 🪙)</button>
+        <button class="big alt" id="free">💙 Liberalo (+${relValue} 🪙)</button>
+      </div>
+    </div>`, false);
+  document.getElementById('cardFish').appendChild(fishCanvas(fish, 360, 160));
+  const rec = () => {
+    const e = save.album[fish.id] || {n:0, best:0};
+    e.n++; e.best = Math.max(e.best, kg); save.album[fish.id] = e;
+  };
+  document.getElementById('keep').onclick = () => { rec(); save.coins += value; SFX.coin(); persist(); closePanel(); setState('idle'); say(`+${value} 🪙  Che pescata!`); };
+  document.getElementById('free').onclick = () => { rec(); save.coins += relValue; save.released++; SFX.coin(); persist(); closePanel(); setState('idle'); say('💙 Bravo! Il pesce torna a nuotare libero.'); };
+}
+
+function showAlbum(){
+  let caught = 0;
+  let html = '<h2>🐟 Album dei pesci</h2>';
+  PLACES.forEach(p => {
+    html += `<p><b>${p.name}</b>${save.places.includes(p.id) ? '' : ' 🔒'}</p><div class="grid">`;
+    p.fish.forEach(f => {
+      const a = save.album[f.id]; if (a) caught++;
+      html += `<div class="cell ${f.legend?'legend':''}" data-f="${f.id}"><div class="fc"></div><b>${a ? f.name : (f.legend ? '⭐ ???' : '???')}</b>${a ? `presi: ${a.n}<br>record: ${a.best.toLocaleString('it-IT')} kg` : '<br>&nbsp;'}</div>`;
+    });
+    html += '</div>';
+  });
+  html += `<p>Specie trovate: <b>${caught} / ${ALL_FISH.length}</b> &nbsp; · &nbsp; Pesci liberati: <b>${save.released}</b> 💙</p>`;
+  openPanel(html);
+  panel.querySelectorAll('.cell').forEach(el => {
+    const f = ALL_FISH.find(z => z.id === el.dataset.f);
+    el.querySelector('.fc').appendChild(fishCanvas(f, 150, 70, !save.album[f.id]));
+  });
+}
+
+function showShop(){
+  let html = '<h2>🛒 Negozio di pesca</h2><p>Spendi le monete per attrezzatura migliore!</p><div class="shop">';
+  Object.entries(UPGRADES).forEach(([k, u]) => {
+    const lv = save[k], max = u.costs.length - 1, next = lv < max ? u.costs[lv+1] : null;
+    html += `<div class="item"><div class="ico">${u.ico}</div><div class="txt"><b>${u.names[lv]}</b><br>${u.desc}
+      <div class="lv">${u.costs.map((_,i)=>`<i class="${i<=lv?'on':''}"></i>`).join('')}</div></div>
+      ${next !== null ? `<button class="big" data-k="${k}" ${save.coins < next ? 'disabled' : ''}>${u.names[lv+1]}<br>🪙 ${next}</button>` : '<b>MAX ⭐</b>'}</div>`;
+  });
+  html += '</div>';
+  openPanel(html);
+  panel.querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
+    const k = b.dataset.k, cost = UPGRADES[k].costs[save[k]+1];
+    if (save.coins < cost) return;
+    save.coins -= cost; save[k]++; persist(); SFX.win(); showShop(); refreshHud();
+  });
+}
+
+function showPlaces(){
+  let html = '<h2>🗺️ Dove andiamo a pescare?</h2><div class="places">';
+  PLACES.forEach(p => {
+    const has = save.places.includes(p.id), here = save.place === p.id;
+    html += `<div class="place"><div class="sky" style="background:linear-gradient(${p.sky[0]},${p.sky[1]} 55%,${p.water[0]} 56%,${p.water[1]})"></div>
+      <b>${p.name}</b>
+      ${here ? '<button class="big alt" disabled>Sei qui</button>'
+        : has ? `<button class="big" data-go="${p.id}">Vai!</button>`
+        : `<button class="big" data-buy="${p.id}" ${save.coins < p.cost ? 'disabled' : ''}>🔓 Sblocca 🪙 ${p.cost}</button>`}</div>`;
+  });
+  html += '</div>';
+  openPanel(html);
+  panel.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { save.place = b.dataset.go; persist(); closePanel(); say(`Benvenuto: ${place().name}!`); });
+  panel.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => {
+    const p = PLACES.find(z => z.id === b.dataset.buy);
+    if (save.coins < p.cost) return;
+    save.coins -= p.cost; save.places.push(p.id); save.place = p.id; persist(); SFX.win(); closePanel(); say(`Nuovo luogo sbloccato: ${p.name}! 🎉`, 3);
+  });
+}
+
+function showIntro(){
+  openPanel(`
+    <h2>🎣 Lenza d'Oro</h2>
+    <p>Ciao! Sei <b>Tobia</b>, giovane pescatore. Il tuo sogno? Diventare il più grande pescatore del mondo e catturare i <b>pesci leggendari</b>!</p>
+    <div class="steps">
+      <div class="step"><div class="e">👆</div><b>1. Lancia</b><br>Tieni premuto e lascia quando la barra è piena. Più lontano lanci, più trovi pesci rari!</div>
+      <div class="step"><div class="e">👀</div><b>2. Aspetta</b><br>Quando il galleggiante va <b>sotto</b> e compare il <b>!</b>, clicca subito!</div>
+      <div class="step"><div class="e">🌀</div><b>3. Recupera</b><br>Tieni premuto per tirare. Se la tensione va nel <b style="color:#e74c3c">rosso</b>, <b>molla</b> o si rompe il filo!</div>
+    </div>
+    <div class="row"><button class="big" id="go">Iniziamo! 🐟</button></div>`, false);
+  document.getElementById('go').onclick = () => { save.seenIntro = true; persist(); audio(); closePanel(); };
+}
+
+/* ---------------- HUD ---------------- */
+const coinsEl = document.getElementById('coins');
+const hudBtns = ['bAlbum','bShop','bPlaces'].map(id => document.getElementById(id));
+function refreshHud(){
+  coinsEl.textContent = '🪙 ' + save.coins;
+  document.getElementById('bSound').textContent = save.muted ? '🔇' : '🔊';
+}
+function guard(fn){ return () => { if (S!=='idle'){ say('Finisci prima di pescare questo pesce! 🎣'); return; } fn(); }; }
+document.getElementById('bAlbum').onclick = guard(showAlbum);
+document.getElementById('bShop').onclick = guard(showShop);
+document.getElementById('bPlaces').onclick = guard(showPlaces);
+document.getElementById('bSound').onclick = () => { save.muted = !save.muted; persist(); refreshHud(); };
+// i bottoni non devono far partire il lancio
+document.querySelector('.hud').addEventListener('pointerdown', e => e.stopPropagation());
+
+/* ---------------- LOOP ---------------- */
+let last = performance.now();
+function frame(t){
+  const dt = Math.min(.05, (t - last) / 1000); last = t;
+  if (!uiOpen || S==='caught') update(uiOpen ? 0 : dt);
+  draw();
+  const m = hintText(); if (m !== lastMsg){ msgEl.textContent = m; msgEl.style.display = m ? '' : 'none'; lastMsg = m; }
+  const busy = S!=='idle';
+  hudBtns.forEach(b => b.disabled = busy);
+  coinsEl.textContent = '🪙 ' + save.coins;
+  requestAnimationFrame(frame);
+}
+refreshHud();
+if (!save.seenIntro) showIntro();
+requestAnimationFrame(frame);
+
+// piccolo aiuto per i test dal browser
+window.__game = { get state(){ return S; }, get R(){ return R; }, get fish(){ return fish; }, get kg(){ return kg; }, save,
+  press, release, tick(n=1){ for (let i=0;i<n;i++) if (!uiOpen || S==='caught') update(1/60); draw(); } };
+</script>
+</body>
+</html>
