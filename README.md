@@ -5,7 +5,7 @@ I giochi fatti in casa, tutti insieme. Ogni gioco ha la sua cartella.
 | Cartella | Gioco | Come si apre |
 |---|---|---|
 | [`sampei/`](sampei/) | **Lenza d'Oro**: gioco di pesca in 2D e 3D | `sampei/3d.html` oppure `sampei/index.html` |
-| [`agata/`](agata/) | **Agata e Red**: gare di endurance a cavallo, in 3D | `agata/index.html` |
+| [`cavalli/`](cavalli/) | **Agata e Red**: gare di endurance a cavallo, in 3D | `cavalli/index.html` |
 
 La pagina [`index.html`](index.html) qui in cima mostra tutti i giochi e porta a ognuno.
 
