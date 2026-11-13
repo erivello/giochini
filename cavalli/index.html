@@ -66,13 +66,14 @@ button{font-family:inherit;cursor:pointer;border:0}
 #keysHint{font-size:11px;color:#9a90ad;margin-top:2px}
 #toast{position:absolute;left:50%;top:24%;transform:translateX(-50%);background:rgba(43,33,64,.9);color:#fff;font-weight:700;padding:8px 16px;border-radius:14px;font-size:17px;text-align:center;max-width:min(90vw,480px);opacity:0;transition:opacity .25s}
 #toast.show{opacity:1}
-#touch button{pointer-events:auto;position:absolute;width:68px;height:68px;border-radius:50%;background:rgba(255,255,255,.88);font-size:28px;color:var(--purple);box-shadow:0 4px 12px rgba(0,0,0,.2);touch-action:none}
-#touch button.pressed{background:#ffd6ea}
-#tLeft{left:calc(14px + env(safe-area-inset-left));bottom:calc(20px + env(safe-area-inset-bottom))}
-#tRight{left:calc(92px + env(safe-area-inset-left));bottom:calc(20px + env(safe-area-inset-bottom))}
-#tUp{right:calc(14px + env(safe-area-inset-right));bottom:calc(96px + env(safe-area-inset-bottom))}
-#tDown{right:calc(14px + env(safe-area-inset-right));bottom:calc(20px + env(safe-area-inset-bottom))}
-body.touch #gaitBox{bottom:calc(100px + env(safe-area-inset-bottom))}
+#touch button{pointer-events:auto;position:absolute;width:68px;height:68px;border-radius:50%;background:rgba(255,255,255,.88);font-size:28px;color:var(--purple);box-shadow:0 4px 12px rgba(0,0,0,.2);touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+#touch button.pressed{background:#ffd6ea;transform:scale(.94)}
+/* lontani dai bordi: lì il telefono intercetta i gesti "indietro" e "home" e ritarda il tocco */
+#tLeft{left:calc(30px + env(safe-area-inset-left));bottom:calc(30px + env(safe-area-inset-bottom))}
+#tRight{left:calc(110px + env(safe-area-inset-left));bottom:calc(30px + env(safe-area-inset-bottom))}
+#tUp{right:calc(26px + env(safe-area-inset-right));bottom:calc(108px + env(safe-area-inset-bottom))}
+#tDown{right:calc(26px + env(safe-area-inset-right));bottom:calc(30px + env(safe-area-inset-bottom))}
+body.touch #gaitBox{bottom:calc(104px + env(safe-area-inset-bottom));min-width:176px}
 body.touch #keysHint{display:none}
 
 #count{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;font-size:120px;font-weight:800;color:#fff;text-shadow:0 6px 0 var(--pink),0 10px 30px rgba(0,0,0,.3)}
@@ -896,11 +897,17 @@ let isTouch=false;
 function enableTouch(){if(isTouch)return;isTouch=true;document.body.classList.add('touch');if(mode==='race'||mode==='countdown')show('touch',true);}
 if(matchMedia('(pointer: coarse)').matches||'ontouchstart' in window||navigator.maxTouchPoints>0)enableTouch();
 addEventListener('pointerdown',e=>{if(e.pointerType==='touch')enableTouch();},true);
-function hold(id,key){const b=$(id);const on=e=>{e.preventDefault();steerTouch[key]=true;b.classList.add('pressed');};const off=()=>{steerTouch[key]=false;b.classList.remove('pressed');};
-  b.addEventListener('pointerdown',on);b.addEventListener('pointerup',off);b.addEventListener('pointercancel',off);b.addEventListener('pointerleave',off);}
+// il dito resta "agganciato" al pulsante anche se scivola un po' fuori (setPointerCapture)
+function hold(id,key){const b=$(id);
+  const on=e=>{e.preventDefault();try{b.setPointerCapture(e.pointerId);}catch(_){}steerTouch[key]=true;b.classList.add('pressed');};
+  const off=()=>{steerTouch[key]=false;b.classList.remove('pressed');};
+  b.addEventListener('pointerdown',on);for(const ev of['pointerup','pointercancel','lostpointercapture'])b.addEventListener(ev,off);
+  b.addEventListener('contextmenu',e=>e.preventDefault());}
 hold('tLeft','l');hold('tRight','r');
-$('tUp').addEventListener('pointerdown',e=>{e.preventDefault();changeGait(1);});
-$('tDown').addEventListener('pointerdown',e=>{e.preventDefault();changeGait(-1);});
+for(const[id,d]of[['tUp',1],['tDown',-1]]){const b=$(id);
+  b.addEventListener('pointerdown',e=>{e.preventDefault();changeGait(d);b.classList.add('pressed');});
+  for(const ev of['pointerup','pointercancel','pointerleave'])b.addEventListener(ev,()=>b.classList.remove('pressed'));
+  b.addEventListener('contextmenu',e=>e.preventDefault());}
 $('muteBtn').addEventListener('click',()=>{muted=!muted;$('muteBtn').textContent=muted?'🔇':'🔊';});
 const ray=new THREE.Raycaster(),ndc=new THREE.Vector2(),wp=new THREE.Vector3();
 renderer.domElement.addEventListener('pointerdown',e=>{
