@@ -6,7 +6,7 @@
    tutto il resto dalla memoria del telefono, aggiornandola dietro le quinte.
    Se aggiungi un gioco: metti i suoi file in FILES e cambia VERSIONE.
    ========================================================= */
-const VERSIONE = 'giochini-1';
+const VERSIONE = 'giochini-2';
 const FILES = [
   './', 'index.html', 'app.js', 'schermo-intero.js', 'manifest.webmanifest',
   'icone/icona-48.png', 'icone/icona-180.png', 'icone/icona-192.png', 'icone/icona-512.png',
@@ -24,9 +24,11 @@ const ESTERNI = [
 
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
+    // un file alla volta: se uno non arriva, gli altri si salvano lo stesso
+    // (quello mancante si salverà la prossima volta che si apre)
     const c = await caches.open(VERSIONE);
-    await c.addAll(FILES);
-    await Promise.all(ESTERNI.map(u => fetch(u, { mode:'cors' }).then(r => r.ok && c.put(u, r)).catch(() => {})));
+    const salva = (u, opt) => fetch(u, opt).then(r => r.ok ? c.put(u, r) : null).catch(() => null);
+    await Promise.all([...FILES.map(u => salva(u, { cache:'reload' })), ...ESTERNI.map(u => salva(u, { mode:'cors' }))]);
     self.skipWaiting();
   })());
 });
