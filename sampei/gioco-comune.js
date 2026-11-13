@@ -568,10 +568,26 @@ function hudTick(state){
 }
 
 /* ---------------- MUSICA DI SOTTOFONDO ----------------
-   Due copie del brano: quando una sta per finire parte l'altra,
-   e si incrociano con una dissolvenza (fade out / fade in). */
-const MUSIC_VOL = .18, FADE = 1.6;   // volume (0..1) e durata della dissolvenza in secondi
-let tracks = [], curTrack = 0, musicStarted = false, musicTimer = null, routed = false;
+   Due musiche:
+   - a casa (file aperto dal disco, localhost, rete di casa 192.168.x / 10.x):
+     la sigla, assets/sigla.mp3, che NON è nel repository (è solo sul computer);
+   - online (GitHub Pages): "La canzone di Tommaso", una musica originale
+     suonata dal gioco stesso, nota per nota.
+   Se la sigla non c'è, si sente comunque quella originale.
+   Per provarle a mano: aggiungi ?musica=nuova oppure ?musica=sigla all'indirizzo. */
+const MUSIC_VOL = .18, FADE = 1.6;   // volume della sigla (0..1) e durata della dissolvenza in secondi
+const IS_HOME = (() => {
+  if (location.protocol === 'file:') return true;
+  const h = location.hostname;
+  return h === '' || h === 'localhost' || h === '::1' || h === '[::1]' || /\.local$/.test(h) ||
+    /^127\./.test(h) || /^10\./.test(h) || /^192\.168\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h);
+})();
+const MUSIC_PICK = new URLSearchParams(location.search).get('musica');
+let musicMode = MUSIC_PICK === 'nuova' ? 'synth' : MUSIC_PICK === 'sigla' || IS_HOME ? 'mp3' : 'synth';
+let musicStarted = false;
+
+/* ---- la sigla (mp3): due copie che si incrociano con una dissolvenza ---- */
+let tracks = [], curTrack = 0, musicTimer = null, routed = false;
 // su iPhone/iPad il volume si può cambiare solo passando dal mixer audio del browser
 function routeMusic(){
   if (routed || location.protocol === 'file:') return;
@@ -592,9 +608,8 @@ function musicTick(){
     B.a.currentTime = 0; setVol(B, 0); B.a.play().catch(() => {}); curTrack = 1 - curTrack;
   }
 }
-function syncMusic(){
-  document.getElementById('bMusic').classList.toggle('off', !save.music);
-  if (save.music && musicStarted && !document.hidden){
+function mp3Play(on){
+  if (on){
     routeMusic();
     const A = tracks[curTrack];
     if (A.a.paused){ setVol(A, envelope(A)); A.a.play().catch(() => {}); }
@@ -604,6 +619,163 @@ function syncMusic(){
     clearInterval(musicTimer); musicTimer = null;
   }
 }
+function setupSigla(){
+  tracks = [0, 1].map(() => { const a = new Audio('assets/sigla.mp3'); a.preload = 'auto'; return { a, g:null }; });
+  // la sigla non c'è (per esempio su una copia scaricata da GitHub): si passa alla musica originale
+  tracks[0].a.addEventListener('error', () => {
+    if (musicMode !== 'mp3') return;
+    mp3Play(false); musicMode = 'synth'; syncMusic();
+  });
+}
+
+/* ---- "La canzone di Tommaso": musica originale, allegra, da avventura in barca ----
+   In Sol maggiore, 132 battiti al minuto. Ogni battuta dura 8 crome.
+   Note: "G4" = una croma, "G4:2" = due crome, "r" = pausa. */
+const SONG_BPM = 132, SONG_VOL = .35;   // volume simile a quello della sigla
+const SONG_A1 = [
+  ['G',  'r D4 G4 A4 B4:2 G4:2'],
+  ['G',  'D5:3 B4 A4:2 G4:2'],
+  ['C',  'E5:2 E5 D5 C5:2 E5:2'],
+  ['G',  'D5:6 r:2'],
+  ['Em', 'B4 B4 B4 C5 D5:2 B4:2'],
+  ['C',  'C5 C5 C5 B4 A4:2 G4:2'],
+  ['D',  'A4:2 D5:2 F#5:2 E5 D5'],
+  ['D',  'A4:6 r:2'],
+];
+const SONG_A2 = [
+  ...SONG_A1.slice(0, 3),
+  ['G',  'D5:2 B4 G4 D5:4'],
+  ...SONG_A1.slice(4, 6),
+  ['D',  'A4 B4 C5 D5 E5:2 F#5:2'],
+  ['G',  'G5:6 r:2'],
+];
+const SONG_B = [
+  ['C',  'E5:3 D5 C5:2 G4:2'],
+  ['D',  'F#5:3 E5 D5:2 A4:2'],
+  ['Bm', 'D5 D5 D5 E5 F#5:2 D5:2'],
+  ['Em', 'G5:4 E5:2 B4:2'],
+  ['C',  'C5 D5 E5 G5 E5:2 C5:2'],
+  ['D',  'D5 E5 F#5 A5 F#5:2 D5:2'],
+  ['G',  'B5:2 A5 G5 D5:2 B4:2'],
+  ['D7', 'C5:2 B4 A4 F#4:2 D4:2'],
+];
+const SONG = [...SONG_A1, ...SONG_A2, ...SONG_B, ...SONG_A2];
+// accordo: [basso sul primo tempo, basso sul terzo, note del "pa" sul secondo e quarto]
+const SONG_CHORDS = {
+  G:  ['G2', 'D3', ['B3','D4','G4']],
+  C:  ['C3', 'G2', ['C4','E4','G4']],
+  D:  ['D3', 'A2', ['A3','D4','F#4']],
+  D7: ['D3', 'A2', ['A3','C4','F#4']],
+  Em: ['E2', 'B2', ['B3','E4','G4']],
+  Bm: ['B2', 'F#2',['B3','D4','F#4']],
+};
+function midiOf(n){
+  const m = /^([A-G])(#|b)?(\d)$/.exec(n);
+  return 12 * (+m[3] + 1) + {C:0,D:2,E:4,F:5,G:7,A:9,B:11}[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0);
+}
+const hz = m => 440 * Math.pow(2, (m - 69) / 12);
+// tutta la canzone diventa una lista di eventi, croma per croma
+const SONG_STEPS = (() => {
+  const steps = [];
+  SONG.forEach(([ch, mel]) => {
+    const base = steps.length;
+    for (let i = 0; i < 8; i++) steps.push([]);
+    const [b1, b3, stab] = SONG_CHORDS[ch];
+    steps[base].push({ k:'bass', m:midiOf(b1), d:2 });
+    steps[base + 4].push({ k:'bass', m:midiOf(b3), d:2 });
+    [2, 6].forEach(s => stab.forEach(n => steps[base + s].push({ k:'stab', m:midiOf(n), d:1 })));
+    [0, 4].forEach(s => steps[base + s].push({ k:'kick' }));
+    [2, 6].forEach(s => steps[base + s].push({ k:'snare' }));
+    for (let s = 1; s < 8; s += 2) steps[base + s].push({ k:'hat' });
+    let pos = 0;
+    mel.split(' ').forEach(tok => {
+      const [n, len] = tok.split(':'), d = +(len || 1);
+      if (n !== 'r') steps[base + pos].push({ k:'lead', m:midiOf(n), d });
+      pos += d;
+    });
+    if (pos !== 8) console.warn('battuta sbagliata', ch, mel);
+  });
+  return steps;
+})();
+
+let song = null;   // { bus, leadF, noiseBuf, step, next, timer }
+function songVoice(t, freq, dur, type, vol, dest){
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(vol, t + .012);
+  g.gain.setTargetAtTime(vol * .55, t + .03, .12);
+  g.gain.setTargetAtTime(0, t + dur * .88, .035);
+  o.connect(g).connect(dest);
+  o.start(t); o.stop(t + dur + .3);
+}
+function songNoise(t, dur, vol, type, freq){
+  const s = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
+  s.buffer = song.noiseBuf; f.type = type; f.frequency.value = freq;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+  s.connect(f).connect(g).connect(song.bus);
+  s.start(t, Math.random() * .5); s.stop(t + dur + .02);
+}
+function songPlayStep(evs, t, e8){
+  evs.forEach(ev => {
+    const dur = ev.d * e8;
+    if (ev.k === 'lead'){
+      songVoice(t, hz(ev.m), dur, 'square', .07, song.leadF);
+      songVoice(t, hz(ev.m - 12), dur, 'triangle', .06, song.bus);
+    } else if (ev.k === 'bass'){
+      songVoice(t, hz(ev.m), dur * .9, 'triangle', .2, song.bus);
+    } else if (ev.k === 'stab'){
+      songVoice(t, hz(ev.m), dur * .6, 'square', .022, song.leadF);
+    } else if (ev.k === 'kick'){
+      const o = AC.createOscillator(), g = AC.createGain();
+      o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(45, t + .12);
+      g.gain.setValueAtTime(.22, t); g.gain.exponentialRampToValueAtTime(.001, t + .16);
+      o.connect(g).connect(song.bus); o.start(t); o.stop(t + .2);
+    } else if (ev.k === 'snare'){
+      songNoise(t, .12, .06, 'bandpass', 1800);
+    } else if (ev.k === 'hat'){
+      songNoise(t, .035, .025, 'highpass', 7000);
+    }
+  });
+}
+function songTick(){
+  const e8 = 30 / SONG_BPM;   // durata di una croma in secondi
+  while (song.next < AC.currentTime + .2){
+    songPlayStep(SONG_STEPS[song.step], song.next, e8);
+    song.next += e8;
+    song.step = (song.step + 1) % SONG_STEPS.length;
+  }
+}
+function synthPlay(on){
+  if (on){
+    const ctx = audio(); if (!ctx) return;
+    if (!song){
+      const bus = ctx.createGain(); bus.gain.value = 0; bus.connect(ctx.destination);
+      const leadF = ctx.createBiquadFilter(); leadF.type = 'lowpass'; leadF.frequency.value = 2400; leadF.connect(bus);
+      const len = ctx.sampleRate, noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate), ch = noiseBuf.getChannelData(0);
+      for (let i = 0; i < len; i++) ch[i] = Math.random() * 2 - 1;
+      song = { bus, leadF, noiseBuf, step:0, next:0, timer:null };
+    }
+    if (song.timer) return;
+    song.bus.gain.cancelScheduledValues(ctx.currentTime);
+    song.bus.gain.setTargetAtTime(SONG_VOL, ctx.currentTime, .4);   // entra piano piano
+    song.next = ctx.currentTime + .1;
+    song.timer = setInterval(songTick, 40);
+    songTick();
+  } else if (song && song.timer){
+    clearInterval(song.timer); song.timer = null;
+    song.bus.gain.cancelScheduledValues(AC.currentTime);
+    song.bus.gain.setTargetAtTime(0, AC.currentTime, .08);
+  }
+}
+
+function syncMusic(){
+  document.getElementById('bMusic').classList.toggle('off', !save.music);
+  const on = save.music && musicStarted && !document.hidden;
+  if (musicMode === 'mp3'){ synthPlay(false); mp3Play(on); }
+  else { if (tracks.length) mp3Play(false); synthPlay(on); }
+}
+window.__music = { mode: () => musicMode, home: IS_HOME, tracks: () => tracks, song: () => song };   // per i test dal browser
 
 /* ---------------- SCHERMO INTERO E ORIZZONTALE (telefoni) ----------------
    Su Android il gioco va a tutto schermo e si gira in orizzontale.
@@ -649,8 +821,7 @@ function initUI(game){
   document.getElementById('bSound').onclick = () => { save.muted = !save.muted; persist(); refreshHud(); };
   document.querySelector('.hud').addEventListener('pointerdown', e => e.stopPropagation());
   // musica
-  tracks = [0, 1].map(() => { const a = new Audio('assets/sigla.mp3'); a.preload = 'auto'; return { a, g:null }; });
-  window.__music = tracks;   // per i test dal browser
+  if (musicMode === 'mp3') setupSigla();
   const firstTouch = () => { if (musicStarted) return; musicStarted = true; syncMusic(); };
   window.addEventListener('pointerdown', firstTouch, true);
   window.addEventListener('keydown', firstTouch, true);

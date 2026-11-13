@@ -23,6 +23,10 @@ python3 -m http.server 8123
 
 e poi apri http://localhost:8123
 
+### La musica di Lenza d'Oro
+
+A casa (file aperto dal disco, `localhost` o un indirizzo della rete di casa come `192.168.…`) suona la sigla, `sampei/assets/sigla.mp3`. Il file non è nel repository per i diritti d'autore: va copiato a mano in quella cartella. Online, o se il file manca, suona "La canzone di Tommaso", una musica originale che il gioco suona da solo. Per sentirle a mano aggiungi `?musica=nuova` oppure `?musica=sigla` all'indirizzo.
+
 ## Aggiungere un gioco
 
 1. Crea una cartella nuova (per esempio `astronavi/`) con dentro il suo `index.html`.
