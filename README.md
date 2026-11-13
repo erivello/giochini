@@ -4,9 +4,9 @@ I giochi fatti in casa, tutti insieme. Ogni gioco ha la sua cartella.
 
 | Cartella | Gioco | Come si apre |
 |---|---|---|
-| [`sampei/`](sampei/) | **Lenza d'Oro**: gioco di pesca in 2D e 3D | `sampei/3d.html` oppure `sampei/index.html` |
+| [`il-pescatore/`](il-pescatore/) | **Lenza d'Oro**: gioco di pesca in 2D e 3D | `il-pescatore/3d.html` oppure `il-pescatore/index.html` |
 | [`cavalli/`](cavalli/) | **Agata e Red**: gare di endurance a cavallo, in 3D | `cavalli/index.html` |
-| [`spiderman/`](spiderman/) | **Eroe Ragno**: un supereroe ragno in 3D, per i più piccoli: acchiappa i cattivi, ferma il treno, città libera | `spiderman/index.html` |
+| [`uomo-ragno/`](uomo-ragno/) | **Eroe Ragno**: un supereroe ragno in 3D, per i più piccoli: acchiappa i cattivi, ferma il treno, città libera | `uomo-ragno/index.html` |
 | [`brumme/`](brumme/) | **Brummè**: le macchinine per i più piccoli (2 anni): garage, strada, paese e prato in 3D | `brumme/index.html` |
 
 La pagina [`index.html`](index.html) qui in cima mostra tutti i giochi e porta a ognuno.
@@ -25,7 +25,7 @@ e poi apri http://localhost:8123
 
 ### La musica di Lenza d'Oro
 
-A casa (file aperto dal disco, `localhost` o un indirizzo della rete di casa come `192.168.…`) suona la sigla, `sampei/assets/sigla.mp3`. Il file non è nel repository per i diritti d'autore: va copiato a mano in quella cartella. Online, o se il file manca, suona "La canzone di Tommaso", una musica originale che il gioco suona da solo. Per sentirle a mano aggiungi `?musica=nuova` oppure `?musica=sigla` all'indirizzo.
+A casa (file aperto dal disco, `localhost` o un indirizzo della rete di casa come `192.168.…`) suona la sigla, `il-pescatore/assets/sigla.mp3`. Il file non è nel repository per i diritti d'autore: va copiato a mano in quella cartella. Online, o se il file manca, suona "La canzone di Tommaso", una musica originale che il gioco suona da solo. Per sentirle a mano aggiungi `?musica=nuova` oppure `?musica=sigla` all'indirizzo.
 
 ## Aggiungere un gioco
 
