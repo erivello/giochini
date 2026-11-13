@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Giochini</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Giochini">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icone/icona-48.png">
+<link rel="apple-touch-icon" href="icone/icona-180.png">
+<script src="app.js" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
@@ -29,12 +37,15 @@
   .play{display:inline-block;text-decoration:none;color:var(--ink);font-weight:800;font-size:20px;
     background:#2ecc71;border:3px solid var(--ink);border-radius:14px;padding:6px 16px;box-shadow:0 3px 0 var(--ink)}
   .play.alt{background:#7fd3ff}
+  #installa{margin:0 0 20px;font-family:inherit;cursor:pointer}
+  #installa[hidden]{display:none}
   .play:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
 </style>
 </head>
 <body>
   <h1>🎮 Giochini</h1>
   <p class="sub">Scegli a cosa giocare!</p>
+  <button id="installa" class="play alt" type="button" hidden>📲 Installa come app</button>
   <div class="games">
     <div class="game">
       <div class="art fish">🎣🐟</div>
