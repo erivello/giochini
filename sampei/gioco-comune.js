@@ -499,6 +499,28 @@ function showPlaces(){
   });
 }
 
+function showReset(){
+  const caught = Object.keys(save.album).length;
+  openPanel(`
+    <h2>🔄 Ricominciare da zero?</h2>
+    <p>Se ricominci perdi <b>tutto</b>:</p>
+    <p>🪙 ${save.coins} monete &nbsp;·&nbsp; 🐟 ${caught} specie nell'album &nbsp;·&nbsp; 🎣 attrezzatura, tecniche ed esche &nbsp;·&nbsp; 🗺️ luoghi sbloccati</p>
+    <p><b>Non si può tornare indietro.</b></p>
+    <div class="row">
+      <button class="big alt" id="resetNo">No, torna al gioco</button>
+      <button class="big" id="resetYes" style="background:#ff7b6b">Sì, ricomincia</button>
+    </div>`);
+  document.getElementById('resetNo').onclick = closePanel;
+  document.getElementById('resetYes').onclick = () => {
+    const keep = { muted: save.muted, music: save.music };   // le preferenze di musica e suoni restano
+    Object.keys(save).forEach(k => delete save[k]);
+    Object.assign(save, freshSave(), keep);
+    persist();
+    closePanel(); GAME.toIdle(); GAME.onPlaceChange();
+    showIntro();
+  };
+}
+
 function showIntro(){
   openPanel(`
     <h2>🎣 ${GAME.title}</h2>
@@ -573,12 +595,13 @@ function syncMusic(){
 function initUI(game){
   GAME = game;
   document.getElementById('overlay').addEventListener('pointerdown', e => { if (e.target.id === 'overlay' && GAME.state() !== 'caught' && save.seenIntro) closePanel(); });
-  hudBtns = ['bAlbum','bShop','bPlaces','bTech'].map(id => document.getElementById(id));
+  hudBtns = ['bAlbum','bShop','bPlaces','bTech','bReset'].map(id => document.getElementById(id));
   const guard = fn => () => { if (GAME.state() !== 'idle'){ GAME.say('Finisci prima di pescare questo pesce! 🎣'); return; } fn(); };
   document.getElementById('bAlbum').onclick = guard(showAlbum);
   document.getElementById('bShop').onclick = guard(showShop);
   document.getElementById('bPlaces').onclick = guard(showPlaces);
   document.getElementById('bTech').onclick = guard(showTech);
+  document.getElementById('bReset').onclick = guard(showReset);
   document.getElementById('bSound').onclick = () => { save.muted = !save.muted; persist(); refreshHud(); };
   document.querySelector('.hud').addEventListener('pointerdown', e => e.stopPropagation());
   // musica
