@@ -6,6 +6,7 @@ I giochi fatti in casa, tutti insieme. Ogni gioco ha la sua cartella.
 |---|---|---|
 | [`sampei/`](sampei/) | **Lenza d'Oro**: gioco di pesca in 2D e 3D | `sampei/3d.html` oppure `sampei/index.html` |
 | [`cavalli/`](cavalli/) | **Agata e Red**: gare di endurance a cavallo, in 3D | `cavalli/index.html` |
+| [`ragno/`](ragno/) | **Eroe Ragno**: un supereroe ragno in 3D, per i più piccoli: acchiappa i cattivi, ferma il treno, città libera | `ragno/index.html` |
 
 La pagina [`index.html`](index.html) qui in cima mostra tutti i giochi e porta a ognuno.
 
