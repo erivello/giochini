@@ -41,4 +41,8 @@ Servono `manifest.webmanifest` (nome, colori, icone in `icone/`), `sw.js` (il se
 4. Per il telefono, includi in fondo alla pagina `<script src="../schermo-intero.js" data-after="idDelPulsanteAudio"></script>`: aggiunge il pulsante ⛶ accanto a quello indicato e, su Android, va a tutto schermo al primo tocco. Nel `<head>` metti anche i tag `apple-mobile-web-app-capable` e `mobile-web-app-capable`, per aprire il gioco a tutto schermo dall'icona sulla schermata Home (vedi `cavalli/index.html`).
 5. Nel `<head>` aggiungi i collegamenti all'app, come negli altri giochi: `manifest.webmanifest`, le icone e `<script src="../app.js" defer></script>`. Poi aggiungi i file del gioco alla lista `FILES` in `sw.js` e cambia `VERSIONE`, così funziona anche offline.
 
+## Crediti
+
+La mappa di San Lorenzo nel gioco dei cavalli (`cavalli/mappa-san-lorenzo.js`) usa dati © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors (licenza ODbL) e le altitudini Copernicus EU-DEM (tramite OpenTopoData).
+
 La storia dei commit di ogni gioco è stata conservata quando è stato spostato qui (veniva dai repository `erivello/sampei` ed `erivello/agata`).

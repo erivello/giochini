@@ -6,12 +6,12 @@
    tutto il resto dalla memoria del telefono, aggiornandola dietro le quinte.
    Se aggiungi un gioco: metti i suoi file in FILES e cambia VERSIONE.
    ========================================================= */
-const VERSIONE = 'giochini-2';
+const VERSIONE = 'giochini-3';
 const FILES = [
   './', 'index.html', 'app.js', 'schermo-intero.js', 'manifest.webmanifest',
   'icone/icona-48.png', 'icone/icona-180.png', 'icone/icona-192.png', 'icone/icona-512.png',
   'il-pescatore/index.html', 'il-pescatore/3d.html', 'il-pescatore/gioco-comune.js',
-  'cavalli/index.html',
+  'cavalli/index.html', 'cavalli/mappa-san-lorenzo.js',
   'uomo-ragno/index.html',
   'brumme/index.html', 'brumme/3d.html', 'brumme/garage.html', 'brumme/paese.html', 'brumme/strada.html',
   'brumme/comune.css', 'brumme/comune.js',
