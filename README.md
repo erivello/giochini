@@ -7,6 +7,7 @@ I giochi fatti in casa, tutti insieme. Ogni gioco ha la sua cartella.
 | [`sampei/`](sampei/) | **Lenza d'Oro**: gioco di pesca in 2D e 3D | `sampei/3d.html` oppure `sampei/index.html` |
 | [`cavalli/`](cavalli/) | **Agata e Red**: gare di endurance a cavallo, in 3D | `cavalli/index.html` |
 | [`spiderman/`](spiderman/) | **Eroe Ragno**: un supereroe ragno in 3D, per i più piccoli: acchiappa i cattivi, ferma il treno, città libera | `spiderman/index.html` |
+| [`brumme/`](brumme/) | **Brummè**: le macchinine per i più piccoli (2 anni): garage, strada, paese e prato in 3D | `brumme/index.html` |
 
 La pagina [`index.html`](index.html) qui in cima mostra tutti i giochi e porta a ognuno.
 

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Brummè</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="comune.css">
+<style>
+body{background:linear-gradient(#8fd3ff,#d9f1ff 60%,#7fc48a 60%,#5ea86b);display:flex;flex-direction:column;align-items:center;
+  padding:calc(12px + env(safe-area-inset-top)) 16px calc(14px + env(safe-area-inset-bottom))}
+h1{margin:0;font-size:clamp(48px,11vh,96px);line-height:1;color:#fff;letter-spacing:1px;
+  text-shadow:0 5px 0 #e8322f,4px 4px 0 #1d2b36,-4px 4px 0 #1d2b36,0 10px 18px rgba(0,0,0,.25);animation:pulse 2.4s ease-in-out infinite}
+#stage{flex:1;width:100%;min-height:120px;display:block}
+.modes{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;width:min(100%,900px)}
+.mode{border-radius:26px;border:5px solid #fff;padding:6px 6px 10px;font-size:clamp(18px,3.4vh,26px);font-weight:800;line-height:1.05;color:#fff;
+  text-shadow:0 2px 0 rgba(0,0,0,.35);box-shadow:0 7px 0 rgba(0,0,0,.25),0 12px 22px rgba(0,0,0,.2);display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none}
+.mode:active{transform:translateY(5px);box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.mode .ic{font-size:clamp(46px,11vh,78px);line-height:1.1;text-shadow:none}
+.m1{background:linear-gradient(#ffb02e,#f07d00)}
+.m2{background:linear-gradient(#5b8cff,#2f5fd8)}
+.m3{background:linear-gradient(#45d483,#1d9a55)}
+.m4{background:linear-gradient(#ff6fb5,#d63a86)}
+@media (orientation:portrait){ .modes{grid-template-columns:1fr 1fr} }
+</style>
+</head>
+<body>
+<div class="bar left"><a class="round" href="../index.html" aria-label="Tutti i giochi">🎮</a></div>
+<div class="bar right"><button class="round" id="soundBtn" aria-label="Suono">🔊</button></div>
+
+<h1>Brummè</h1>
+<canvas id="stage"></canvas>
+<div class="modes">
+  <a class="mode m1" href="garage.html" data-say="Garage!"><span class="ic">🔧</span>Garage</a>
+  <a class="mode m2" href="strada.html" data-say="Strada!"><span class="ic">🛣️</span>Strada</a>
+  <a class="mode m3" href="paese.html" data-say="Paese!"><span class="ic">🏘️</span>Paese</a>
+  <a class="mode m4" href="3d.html" data-say="Brummè 3D!"><span class="ic">🚗</span>3D</a>
+</div>
+
+<script src="comune.js"></script>
+<script>
+(function(){
+'use strict';
+const B = window.Brumme, cv = document.getElementById('stage');
+let t = 0, hop = 0, hopV = 0, happy = 0, blink = 0, x = null, last = performance.now();
+
+cv.addEventListener('pointerdown', () => {
+  B.sfx.clacson(); B.say('Brummè!', 300);
+  hopV = -520; happy = 1.2;
+});
+document.querySelectorAll('.mode').forEach(a => a.addEventListener('click', e => {
+  e.preventDefault(); B.sfx.brum(); B.say(a.dataset.say);
+  setTimeout(() => location.href = a.getAttribute('href'), 650);
+}));
+
+function frame(now){
+  const dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt;
+  const { c, w, h } = B.fitCanvas(cv);
+  c.clearRect(0, 0, w, h);
+  const car = B.save.car;
+  const s = Math.min(w / 420, h / (B.carHeight(car) + 40));
+  // strada
+  const gy = h - 10;
+  c.fillStyle = '#4b5361'; B.rr(c, 0, gy - 18 * s, w, 26 * s, 8); c.fill();
+  c.fillStyle = '#fff';
+  for (let i = -1; i < w / 60 + 1; i++) c.fillRect(i * 60 - (t * 120 % 60), gy - 6 * s, 30, 4);
+  // la macchinina va avanti e indietro un pochino
+  if (x === null) x = w / 2;
+  x = w / 2 + Math.sin(t * 0.7) * w * 0.22;
+  hopV += 1600 * dt; hop += hopV * dt; if (hop > 0){ hop = 0; hopV = 0; }
+  happy -= dt; blink -= dt; if (blink < -3.5) blink = 0.15;
+  const dir = Math.cos(t * 0.7);
+  B.drawCar(c, car, x, gy - 10 * s + hop, s, { wheelRot:t * 6, flip:dir < 0, happy:happy > 0, blink:blink > 0, t, arm:(Math.sin(t * 2) + 1) / 2 });
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+<script src="../schermo-intero.js" data-after="soundBtn"></script>
+</body>
+</html>

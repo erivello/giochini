@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Il Paese di Brummè</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="comune.css">
+<style>
+#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+</style>
+</head>
+<body data-landscape>
+<canvas id="c"></canvas>
+<div class="bar left"><a class="round" href="index.html" aria-label="Menu">🏠</a></div>
+<div class="bar right"><button class="round" id="soundBtn" aria-label="Suono">🔊</button></div>
+
+<script src="comune.js"></script>
+<script>
+(function(){
+'use strict';
+const B = window.Brumme, INK = B.INK, cv = document.getElementById('c');
+const rand = (a, b) => a + Math.random() * (b - a);
+const DW = 1600, DH = 900;          // misure "di disegno" della scena
+const GROUND = 605, ROAD_Y = 772, STOP_X = 715;
+let sc = 1, ox = 0, oy = 0, t = 0, last = performance.now(), idle = 0;
+
+/* ---------- stato del paese ---------- */
+const S = {
+  night:false, nightK:0,
+  light:'verde', lightT:0,
+  fireDoor:0, fireOpen:false,
+  house:{ open:0, opening:false, who:0, t:0 },
+  bird:{ away:false, t:0, x:0, y:0 },
+  wash:0,
+  fuel:{ k:0, filling:false, hop:0, hopV:0, happy:0 },
+  rain:0, rainbow:0,
+  cloudX:[380, 980],
+};
+const cars = [];
+const VISITORS = [
+  { e:'🐶', say:'Bau bau!', sfx:'bau' },
+  { e:'🐱', say:'Miao!', sfx:'miao' },
+  { e:'👵', say:'Ciao Brummè!', sfx:'ding' },
+  { e:'🐰', say:'Ciao!', sfx:'boing' },
+  { e:'👶', say:'Ciao ciao!', sfx:'ding' },
+];
+
+function addCar(fire){
+  const car = fire ? { body:'camion', color:'rosso', wheels:'normali', face:'felice' } : { ...B.randomCar(), body:B.pick(['auto', 'auto', 'corsa', 'camion', 'bus', 'ruspa']) };
+  const c = { car, fire:!!fire, x:fire ? 190 : -260, y:fire ? GROUND : ROAD_Y, v:0, hop:0, hopV:0, happy:0, wheelRot:0, s:0.72 };
+  cars.push(c); return c;
+}
+addCar().x = 200; addCar().x = 900;
+
+/* ---------- le cose che si toccano ---------- */
+const spots = [
+  { id:'pompieri', x:40,   y:330, w:300, h:275 },
+  { id:'casa',     x:380,  y:380, w:230, h:225 },
+  { id:'albero',   x:610,  y:390, w:110, h:215 },
+  { id:'semaforo', x:715,  y:360, w:90,  h:250 },
+  { id:'lavaggio', x:830,  y:400, w:290, h:205 },
+  { id:'benzina',  x:1160, y:420, w:360, h:185 },
+  { id:'sole',     x:1370, y:30,  w:170, h:170 },
+  { id:'nuvola0',  x:0,    y:60,  w:220, h:120, cloud:0 },
+  { id:'nuvola1',  x:0,    y:40,  w:220, h:120, cloud:1 },
+];
+function tapSpot(id){
+  switch(id){
+    case 'pompieri':
+      if (S.fireOpen || cars.some(c => c.fire)) { B.sfx.sirena(2); return; }
+      S.fireOpen = true; B.sfx.porta(); B.say('Pompieri!');
+      setTimeout(() => { const f = addCar(true); f.exit = 0; B.sfx.sirena(6); }, 900);
+      setTimeout(() => { S.fireOpen = false; }, 4200);
+      break;
+    case 'casa':
+      if (S.house.opening) return;
+      S.house.opening = true; S.house.t = 0; S.house.who = (S.house.who + 1) % VISITORS.length;
+      B.sfx.porta();
+      setTimeout(() => { const v = VISITORS[S.house.who]; B.sfx[v.sfx](); B.say(v.say); }, 500);
+      break;
+    case 'albero':
+      if (S.bird.away){ B.sfx.cip(); return; }
+      S.bird.away = true; S.bird.t = 0; B.sfx.cip(); setTimeout(B.sfx.cip, 300); B.say('Cip cip!', 400);
+      break;
+    case 'semaforo':
+      S.light = { verde:'giallo', giallo:'rosso', rosso:'verde' }[S.light]; S.lightT = 0;
+      B.sfx.click(); B.say({ verde:'Verde! Via!', giallo:'Giallo!', rosso:'Rosso! Stop!' }[S.light]);
+      break;
+    case 'lavaggio':
+      S.wash = 2.5; B.sfx.bolle(); setTimeout(B.sfx.bolle, 500); setTimeout(B.sfx.bolle, 1000);
+      for (let i = 0; i < 3; i++) B.burst(rand(870, 1080), rand(450, 580), { n:10, bubble:true, size:16, speed:200, g:-150, life:2 });
+      B.say('Bolle!');
+      break;
+    case 'benzina':
+      if (S.fuel.filling) return;
+      S.fuel.filling = true; S.fuel.k = 0; B.sfx.glu(); B.say('Facciamo il pieno!');
+      break;
+    case 'sole':
+      S.night = !S.night; B.sfx.ding(); B.say(S.night ? 'Buonanotte!' : 'Buongiorno!');
+      if (!S.night) B.sfx.cip();
+      break;
+    case 'nuvola0': case 'nuvola1':
+      if (S.rain > 0) return;
+      S.rain = 3.5; S.rainCloud = id === 'nuvola0' ? 0 : 1; B.sfx.splash(); B.say('Piove!');
+      break;
+  }
+}
+
+cv.addEventListener('pointerdown', e => {
+  const x = (e.clientX - ox) / sc, y = (e.clientY - oy) / sc;
+  idle = 0;
+  // prima le macchinine sulla strada
+  for (const c of cars){
+    if (Math.abs(x - c.x) < 90 && y > c.y - 110 && y < c.y + 10){
+      if (c.fire) B.sfx.sirena(2); else B.sfx.clacson();
+      c.hopV = -480; c.happy = 1; return;
+    }
+  }
+  for (const s of spots){
+    const sx = s.cloud != null ? S.cloudX[s.cloud] - 40 : s.x;
+    if (x > sx && x < sx + s.w && y > s.y && y < s.y + s.h){
+      B.burst(x, y, { n:8, emoji:['✨'], size:30, speed:200, life:0.8 });
+      tapSpot(s.id); return;
+    }
+  }
+  B.sfx.click(); B.burst(x, y, { n:10, speed:220, size:9 });
+});
+
+/* ---------- disegno ---------- */
+const fs = (c, fill, lw) => { c.fillStyle = fill; c.fill(); c.lineWidth = lw || 5; c.strokeStyle = INK; c.stroke(); };
+const rect = (c, x, y, w, h, fill, r) => { B.rr(c, x, y, w, h, r || 4); fs(c, fill); };
+const mix = (a, b, k) => {
+  const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+  const ch = s => [(s >> 16) & 255, (s >> 8) & 255, s & 255];
+  const A = ch(pa), Bb = ch(pb);
+  return 'rgb(' + A.map((v, i) => Math.round(v + (Bb[i] - v) * k)).join(',') + ')';
+};
+const win = (c, x, y, w, h) => rect(c, x, y, w, h, S.nightK > 0.5 ? '#ffe680' : '#bfe8ff', 6);
+
+function drawSky(c){
+  const k = S.nightK;
+  const g = c.createLinearGradient(0, 0, 0, GROUND);
+  g.addColorStop(0, mix('#5cbcff', '#0e1440', k)); g.addColorStop(1, mix('#d4f0ff', '#2b3570', k));
+  c.fillStyle = g; c.fillRect(-2000, -2000, DW + 4000, GROUND + 2000);
+  if (k > 0.05){
+    c.globalAlpha = k; c.fillStyle = '#fff';
+    for (let i = 0; i < 60; i++){ const sx = (i * 397) % (DW + 600) - 300, sy = (i * 151) % 480; c.beginPath(); c.arc(sx, sy, 2 + (i % 3), 0, Math.PI * 2); c.fill(); }
+    c.globalAlpha = 1;
+  }
+  // sole o luna
+  c.save(); c.translate(1455, 115);
+  if (k < 0.5){
+    c.rotate(t * 0.3); c.fillStyle = '#ffd43b';
+    for (let i = 0; i < 12; i++){ c.rotate(Math.PI / 6); B.rr(c, 70, -7, 30, 14, 7); c.fill(); }
+    c.beginPath(); c.arc(0, 0, 60, 0, Math.PI * 2); fs(c, '#ffe066');
+    c.rotate(-t * 0.3); B.drawFace(c, 0, 4, 1.4, 'felice', { blink:(t % 4) < 0.15 });
+  } else {
+    c.beginPath(); c.arc(0, 0, 58, 0, Math.PI * 2); fs(c, '#fff6c8');
+    c.beginPath(); c.arc(28, -16, 52, 0, Math.PI * 2); c.fillStyle = mix('#5cbcff', '#0e1440', k); c.fill();
+    c.font = '40px sans-serif'; c.fillStyle = '#000'; c.textAlign = 'center'; c.fillText('💤', -20, -50 + Math.sin(t * 2) * 6);
+  }
+  c.restore();
+  // arcobaleno
+  if (S.rainbow > 0){
+    c.save(); c.globalAlpha = Math.min(1, S.rainbow) * 0.85; c.lineWidth = 22;
+    ['#ff4d4d', '#ff9a3c', '#ffe14d', '#5fd36b', '#4fa8ff', '#9a6bff'].forEach((col, i) => {
+      c.beginPath(); c.arc(800, 640, 560 - i * 22, Math.PI, 0); c.strokeStyle = col; c.stroke();
+    });
+    c.restore();
+  }
+  // colline
+  c.fillStyle = mix('#8fd07a', '#2c4a3a', k);
+  c.beginPath(); c.moveTo(-2000, GROUND);
+  for (let x = -400; x <= DW + 400; x += 40) c.lineTo(x, GROUND - 90 - Math.sin(x / 210) * 45 - Math.sin(x / 90) * 12);
+  c.lineTo(DW + 2000, GROUND); c.fill();
+}
+function drawCloud(c, i){
+  const x = S.cloudX[i], y = i ? 100 : 120;
+  const raining = S.rain > 0 && S.rainCloud === i;
+  c.fillStyle = raining ? '#9aa6b8' : S.nightK > 0.5 ? '#6d7aa6' : '#fff';
+  c.beginPath(); c.arc(x, y, 42, 0, Math.PI * 2); c.arc(x + 48, y - 22, 52, 0, Math.PI * 2); c.arc(x + 100, y, 42, 0, Math.PI * 2); c.arc(x + 50, y + 16, 40, 0, Math.PI * 2); c.fill();
+  B.drawFace(c, x + 50, y + 4, 1.2, raining ? 'stupito' : 'felice', { blink:((t + i * 2) % 5) < 0.15 });
+  if (raining){
+    c.strokeStyle = '#5aa9e6'; c.lineWidth = 5; c.lineCap = 'round';
+    for (let k = 0; k < 14; k++){
+      const dx = x - 20 + (k * 37) % 150, dy = y + 50 + ((t * 700 + k * 90) % 480);
+      c.beginPath(); c.moveTo(dx, dy); c.lineTo(dx - 4, dy + 22); c.stroke();
+    }
+  }
+}
+function drawStreet(c){
+  const k = S.nightK;
+  c.fillStyle = mix('#7cc45f', '#2c4a3a', k); c.fillRect(-2000, GROUND, DW + 4000, DH + 2000);
+  c.fillStyle = mix('#d0d4dc', '#555c70', k); c.fillRect(-2000, GROUND, DW + 4000, 40);
+  c.fillStyle = mix('#4b5361', '#262a36', k); c.fillRect(-2000, GROUND + 40, DW + 4000, 160);
+  c.fillStyle = '#fff';
+  for (let x = -2000; x < DW + 2000; x += 120) c.fillRect(x, GROUND + 116, 64, 8);
+  // linea dello stop
+  c.fillStyle = 'rgba(255,255,255,.9)'; c.fillRect(STOP_X - 6, GROUND + 44, 8, 152);
+  // fiori nel prato
+  c.font = '34px sans-serif'; c.textAlign = 'center'; c.fillStyle = '#000';
+  for (let x = 40; x < DW; x += 140) c.fillText(x % 280 ? '🌷' : '🌼', x, GROUND + 260 + (x % 3) * 10);
+}
+
+function drawFireStation(c){
+  rect(c, 40, 360, 300, 245, '#d9534f');
+  rect(c, 120, 300, 140, 70, '#d9534f');
+  c.fillStyle = '#fff'; c.font = '800 30px "Baloo 2",sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText('🚒 POMPIERI', 190, 395);
+  // porta che si alza
+  rect(c, 70, 430, 240, 175, '#3a3f4b', 2);
+  const up = S.fireDoor;
+  c.save(); B.rr(c, 70, 430, 240, 175, 2); c.clip();
+  for (let y = 430 - up * 175, i = 0; i < 9; i++, y += 20){ c.fillStyle = i % 2 ? '#e6e9ef' : '#c9ced8'; c.fillRect(70, y, 240, 20); }
+  c.restore();
+  c.lineWidth = 5; c.strokeStyle = INK; B.rr(c, 70, 430, 240, 175, 2); c.stroke();
+  // campana
+  c.font = '40px sans-serif'; c.fillStyle = '#000'; c.fillText('🔔', 190, 330 + Math.sin(t * (S.fireOpen ? 20 : 0)) * 4);
+}
+function drawHouse(c){
+  rect(c, 390, 440, 210, 165, '#ffd36b');
+  c.beginPath(); c.moveTo(372, 448); c.lineTo(495, 350); c.lineTo(618, 448); c.closePath(); fs(c, '#e8584f');
+  rect(c, 540, 365, 30, 50, '#a0522d', 2);
+  win(c, 410, 470, 50, 46); win(c, 532, 470, 50, 46);
+  // porta
+  const h = S.house, k = h.open;
+  rect(c, 468, 515, 56, 90, '#3a2a20', 4);
+  if (k > 0.05){
+    const v = VISITORS[h.who];
+    c.font = '54px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.fillStyle = '#000';
+    c.globalAlpha = Math.min(1, k * 1.5); c.fillText(v.e, 496, 590 + (1 - k) * 30); c.globalAlpha = 1;
+  }
+  c.save(); c.translate(468, 515); c.scale(1 - k * 0.8, 1);
+  rect(c, 0, 0, 56, 90, '#a0522d', 4); c.beginPath(); c.arc(44, 48, 4, 0, Math.PI * 2); c.fillStyle = '#ffd43b'; c.fill();
+  c.restore();
+}
+function drawTree(c){
+  rect(c, 652, 470, 26, 135, '#8a5a2b', 3);
+  c.beginPath(); c.arc(665, 440, 62, 0, Math.PI * 2); c.arc(625, 470, 40, 0, Math.PI * 2); c.arc(705, 470, 40, 0, Math.PI * 2);
+  c.fillStyle = S.nightK > 0.5 ? '#2a6a38' : '#3fae4f'; c.fill();
+  c.fillStyle = '#ff5a5a'; [[640, 430], [690, 450], [660, 480]].forEach(([x, y]) => { c.beginPath(); c.arc(x, y, 9, 0, Math.PI * 2); c.fill(); });
+  const b = S.bird;
+  c.font = '44px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#000';
+  if (!b.away) c.fillText('🐦', 668, 382 + Math.abs(Math.sin(t * 3)) * -4);
+  else { c.save(); c.translate(b.x, b.y); c.scale(-1, 1); c.fillText('🐦', 0, 0); c.restore(); }
+}
+function drawLight(c){
+  rect(c, 752, 470, 16, 135, '#56606e', 2);
+  rect(c, 724, 350, 72, 130, '#2a2f3a', 14);
+  [['rosso', '#ff3b3b'], ['giallo', '#ffcc1a'], ['verde', '#2fdc5f']].forEach(([n, col], i) => {
+    const on = S.light === n;
+    c.beginPath(); c.arc(760, 374 + i * 41, 16, 0, Math.PI * 2);
+    c.fillStyle = on ? col : '#444a56'; c.fill();
+    if (on){ c.save(); c.globalAlpha = 0.35; c.beginPath(); c.arc(760, 374 + i * 41, 28, 0, Math.PI * 2); c.fill(); c.restore(); }
+  });
+}
+function drawWash(c){
+  rect(c, 840, 430, 280, 175, '#4fa3ff');
+  rect(c, 860, 470, 240, 135, '#d9f1ff', 2);
+  c.fillStyle = '#fff'; c.font = '800 28px "Baloo 2",sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText('🫧 LAVAGGIO', 980, 450);
+  const sp = S.wash > 0 ? 9 : 0.6;
+  [930, 1030].forEach((bx, i) => {
+    c.save(); B.rr(c, bx - 26, 480, 52, 118, 24); c.clip();
+    const cols = ['#ff6fb5', '#ffd43b', '#45d483', '#ffffff'];
+    const off = (t * 60 * sp * (i ? 1 : -1)) % 80;
+    for (let y = 400 + off, k = 0; y < 640; y += 20, k++){ c.fillStyle = cols[k % 4]; c.fillRect(bx - 26, y, 52, 20); }
+    c.restore(); c.lineWidth = 4; c.strokeStyle = INK; B.rr(c, bx - 26, 480, 52, 118, 24); c.stroke();
+  });
+}
+function drawGas(c){
+  // tettoia
+  rect(c, 1170, 420, 340, 34, '#ff8a1a', 6);
+  rect(c, 1190, 454, 18, 151, '#d5dce6', 2); rect(c, 1472, 454, 18, 151, '#d5dce6', 2);
+  // pompa
+  rect(c, 1225, 500, 60, 105, '#e8322f', 8);
+  rect(c, 1235, 512, 40, 30, '#fff', 4);
+  c.fillStyle = INK; c.font = '800 20px "Baloo 2",sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText(Math.round(S.fuel.k * 99), 1255, 528);
+  // tubo fino alla macchinina
+  c.beginPath(); c.moveTo(1285, 540); c.quadraticCurveTo(1310, 600, 1330, 555); c.lineWidth = 7; c.strokeStyle = INK; c.stroke();
+  // la macchinina di Brummè
+  const f = S.fuel;
+  B.drawCar(c, B.save.car, 1395, GROUND + f.hop, 0.62, { flip:true, happy:f.happy > 0, blink:(t % 3.3) < 0.14, lights:S.nightK > 0.5, t, arm:f.happy > 0 ? (Math.sin(t * 8) + 1) / 2 : 0 });
+  // indicatore del pieno
+  if (f.filling || f.happy > 0){
+    rect(c, 1335, 380, 120, 26, '#fff', 13);
+    B.rr(c, 1339, 384, 112 * f.k, 18, 9); c.fillStyle = f.k >= 1 ? '#2ecc71' : '#ffcc1a'; c.fill();
+    c.font = '34px sans-serif'; c.fillStyle = '#000'; c.fillText('⛽', 1312, 394);
+  }
+}
+function drawFireExtras(c, v){
+  // scala e lampeggiante sopra il camion dei pompieri (stesse misure di drawCar)
+  c.save(); c.translate(v.x, v.y + v.hop); c.scale(v.s, v.s); c.translate(0, -23);
+  c.lineWidth = 5; c.strokeStyle = '#d5dce6';
+  c.beginPath(); c.moveTo(-104, -112); c.lineTo(14, -112); c.moveTo(-104, -124); c.lineTo(14, -124); c.stroke();
+  for (let x = -100; x <= 10; x += 16){ c.beginPath(); c.moveTo(x, -112); c.lineTo(x, -124); c.stroke(); }
+  const blink = Math.floor(t * 6) % 2;
+  c.beginPath(); c.arc(50, -112, 10, Math.PI, 0); c.fillStyle = blink ? '#ff3b3b' : '#3b8bff'; c.fill();
+  c.globalAlpha = 0.3; c.beginPath(); c.arc(50, -114, 24, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1;
+  c.restore();
+}
+
+/* ---------- traffico ---------- */
+let spawnT = 3;
+function updateCars(dt){
+  spawnT -= dt;
+  if (spawnT <= 0 && cars.filter(c => !c.fire).length < 3 && !cars.some(c => c.x < -60 && !c.fire)){ addCar(); spawnT = rand(3, 6); }
+  cars.sort((a, b) => a.x - b.x);
+  cars.forEach((c, i) => {
+    let target = c.fire ? 300 : 170;
+    if (c.exit != null){
+      // il camion esce dalla caserma e scende sulla strada
+      c.exit += dt; c.y = GROUND + Math.min(1, c.exit / 1.2) * (ROAD_Y - GROUND); target = 120;
+      if (c.exit > 1.2) c.exit = null;
+    }
+    const front = c.x + 100 * c.s;
+    if (!c.fire && S.light !== 'verde' && front < STOP_X && front > STOP_X - 90) target = 0;
+    const ahead = cars.find(o => o !== c && o.x > c.x && o.y > ROAD_Y - 20 && c.y > ROAD_Y - 20 && o.x - c.x < 210);
+    if (ahead) target = Math.min(target, Math.max(0, ahead.v - 20));
+    c.v += (target - c.v) * Math.min(1, dt * (target < c.v ? 6 : 1.5));
+    c.x += c.v * dt; c.wheelRot += c.v * dt / (23 * c.s);
+    c.hopV += 1800 * dt; c.hop += c.hopV * dt; if (c.hop > 0){ c.hop = 0; c.hopV = 0; }
+    c.happy -= dt;
+  });
+  for (let i = cars.length - 1; i >= 0; i--) if (cars[i].x > DW + 300) cars.splice(i, 1);
+}
+
+/* ---------- manina che suggerisce dove toccare ---------- */
+let hintSpot = null;
+function drawHint(c){
+  if (idle < 7){ hintSpot = null; return; }
+  if (!hintSpot) hintSpot = B.pick(spots.filter(s => s.cloud == null));
+  const x = hintSpot.x + hintSpot.w / 2, y = hintSpot.y + hintSpot.h / 2;
+  c.font = '80px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#000';
+  c.fillText('👆', x + 10, y + 40 + Math.abs(Math.sin(t * 4)) * 20);
+}
+
+function frame(now){
+  const dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt; idle += dt;
+  const r = B.fitCanvas(cv), c = r.c;
+  sc = Math.min(r.w / DW, r.h / DH); ox = (r.w - DW * sc) / 2; oy = (r.h - DH * sc) / 2;
+
+  // aggiorna
+  S.nightK += ((S.night ? 1 : 0) - S.nightK) * Math.min(1, dt * 2);
+  if (S.light !== 'verde'){ S.lightT += dt; if (S.lightT > 7){ S.light = 'verde'; S.lightT = 0; } }
+  S.fireDoor += ((S.fireOpen ? 1 : 0) - S.fireDoor) * Math.min(1, dt * 3);
+  const h = S.house; if (h.opening){ h.t += dt; h.open = h.t < 0.4 ? h.t / 0.4 : h.t < 2.8 ? 1 : Math.max(0, 1 - (h.t - 2.8) / 0.4); if (h.t > 3.3){ h.opening = false; h.open = 0; } }
+  const b = S.bird; if (b.away){ b.t += dt; b.x = 668 + b.t * 260; b.y = 382 - b.t * 90 + Math.sin(b.t * 10) * 12; if (b.t > 5){ b.away = false; B.sfx.cip(); } }
+  S.wash = Math.max(0, S.wash - dt);
+  if (S.wash > 0 && Math.random() < 0.3) B.burst(rand(870, 1090), rand(480, 590), { n:1, bubble:true, size:rand(10, 22), speed:80, g:-120, life:2 });
+  const f = S.fuel;
+  if (f.filling){ f.k = Math.min(1, f.k + dt / 2.4); if (Math.random() < dt * 2.5) B.sfx.glu();
+    if (f.k >= 1){ f.filling = false; f.happy = 2.2; f.hopV = -500; B.sfx.yay(); B.say('Pieno!'); B.burst(1395, 520, { n:30 }); } }
+  f.hopV += 1800 * dt; f.hop += f.hopV * dt; if (f.hop > 0){ f.hop = 0; f.hopV = f.happy > 0.4 ? -360 : 0; }
+  f.happy -= dt; if (f.happy <= 0 && !f.filling && f.k >= 1) f.k = 0;
+  if (S.rain > 0){ S.rain -= dt; if (S.rain <= 0){ S.rainbow = 5; B.sfx.yay(); B.say('Arcobaleno!'); } }
+  S.rainbow = Math.max(0, S.rainbow - dt);
+  S.cloudX[0] = 300 + Math.sin(t * 0.15) * 120; S.cloudX[1] = 960 + Math.sin(t * 0.12 + 2) * 140;
+  updateCars(dt);
+
+  // disegna
+  c.save(); c.translate(ox, oy); c.scale(sc, sc);
+  drawSky(c); drawCloud(c, 0); drawCloud(c, 1);
+  drawStreet(c);
+  c.lineJoin = 'round';
+  drawFireStation(c); drawHouse(c); drawTree(c); drawWash(c); drawGas(c); drawLight(c);
+  cars.slice().sort((a, b) => a.y - b.y).forEach(v => {
+    B.drawCar(c, v.car, v.x, v.y + v.hop, v.s, { wheelRot:v.wheelRot, happy:v.happy > 0, lights:S.nightK > 0.5, t, blink:((t + v.x * 0.01) % 4) < 0.14 });
+    if (v.fire) drawFireExtras(c, v);
+  });
+  if (S.nightK > 0.02){ c.fillStyle = 'rgba(10,15,50,' + (S.nightK * 0.25) + ')'; c.fillRect(-2000, -2000, DW + 4000, DH + 4000); }
+  B.drawParts(c, dt);
+  drawHint(c);
+  c.restore();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+<script src="../schermo-intero.js" data-after="soundBtn"></script>
+</body>
+</html>

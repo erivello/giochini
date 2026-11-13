@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Brummè 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="comune.css">
+<style>
+#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+#score{position:fixed;top:calc(10px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:var(--card);border-radius:24px;
+  padding:2px 20px 0;font-size:32px;font-weight:800;box-shadow:0 4px 0 rgba(0,0,0,.18);z-index:10}
+#score.bump{animation:pulse .35s}
+#horn{position:fixed;right:calc(16px + env(safe-area-inset-right));bottom:calc(16px + env(safe-area-inset-bottom));z-index:10}
+#hint{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--card);border-radius:24px;
+  padding:4px 22px 2px;font-size:26px;font-weight:800;white-space:nowrap;box-shadow:0 4px 0 rgba(0,0,0,.18);transition:opacity .5s;z-index:10}
+#hint .hand{display:inline-block;animation:pulse 1s infinite}
+#hint.off{opacity:0;pointer-events:none}
+#loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;background:#8fd3ff;z-index:50}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="score">🎈 <span id="nBalloons">0</span></div>
+<div id="hint"><span class="hand">👆</span> Tocca dove vuoi andare!</div>
+<button class="big" id="horn" aria-label="Clacson">📯</button>
+<div class="bar left"><a class="round" href="index.html" aria-label="Menu">🏠</a><a class="round" href="garage.html" aria-label="Garage">🔧</a></div>
+<div class="bar right"><button class="round" id="soundBtn" aria-label="Suono">🔊</button></div>
+<div id="loading">Accendo il motore… 🚗</div>
+
+<script src="comune.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+'use strict';
+const $ = id => document.getElementById(id);
+if (!window.THREE){ $('loading').textContent = 'Serve internet per giocare 🌐'; return; }
+$('loading').remove();
+const B = window.Brumme, carSpec = B.save.car;
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const ARENA = 70;
+
+/* ================= scena ================= */
+const cv = $('c');
+const renderer = new THREE.WebGLRenderer({ canvas:cv, antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x8fd3ff);
+scene.fog = new THREE.Fog(0x8fd3ff, 70, 150);
+const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 400);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x6a9a50, 0.6));
+const sun = new THREE.DirectionalLight(0xffffff, 0.85);
+sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
+Object.assign(sun.shadow.camera, { left:-25, right:25, top:25, bottom:-25, near:1, far:80 });
+scene.add(sun, sun.target);
+
+const M = (color, opts) => new THREE.MeshLambertMaterial(Object.assign({ color }, opts || {}));
+function mesh(geo, mat, x, y, z, parent){
+  const m = new THREE.Mesh(geo, mat); m.position.set(x || 0, y || 0, z || 0);
+  m.castShadow = true; m.receiveShadow = true; (parent || scene).add(m); return m;
+}
+
+// prato e pista
+const ground = mesh(new THREE.CircleGeometry(160, 64), M(0x7cc45f), 0, 0, 0);
+ground.rotation.x = -Math.PI / 2; ground.castShadow = false;
+const track = mesh(new THREE.RingGeometry(26, 33, 64), M(0x8d939e), 0, 0.02, 0);
+track.rotation.x = -Math.PI / 2; track.castShadow = false;
+for (let i = 0; i < 48; i++){
+  const a = i / 48 * Math.PI * 2, d = mesh(new THREE.PlaneGeometry(1.6, 0.35), M(0xffffff), Math.cos(a) * 29.5, 0.03, Math.sin(a) * 29.5);
+  d.rotation.x = -Math.PI / 2; d.rotation.z = -a; d.castShadow = false;
+}
+// fiori
+const flowerGeo = new THREE.SphereGeometry(0.22, 6, 5);
+const flowerMats = [0xff6f8a, 0xffd43b, 0xffffff, 0xb98aff].map(c => M(c));
+for (let i = 0; i < 160; i++){
+  const a = rand(0, Math.PI * 2), r = rand(4, ARENA + 10);
+  if (r > 24 && r < 35) continue;
+  const f = mesh(flowerGeo, B.pick(flowerMats), Math.cos(a) * r, 0.15, Math.sin(a) * r); f.castShadow = false;
+}
+// alberi tutto intorno
+const trunkGeo = new THREE.CylinderGeometry(0.4, 0.55, 3, 8), leafGeo = new THREE.SphereGeometry(2.2, 10, 8);
+const trunkMat = M(0x8a5a2b), leafMats = [M(0x3fae4f), M(0x55c060), M(0x2f9a45)];
+const trees = [];
+function tree(x, z, s){ const g = new THREE.Group(); g.position.set(x, 0, z); g.scale.setScalar(s); scene.add(g);
+  // materiali propri: l'albero diventa trasparente se copre la macchinina
+  const tm = trunkMat.clone(), lm = B.pick(leafMats).clone(); tm.transparent = lm.transparent = true;
+  mesh(trunkGeo, tm, 0, 1.5, 0, g); mesh(leafGeo, lm, 0, 4, 0, g); mesh(leafGeo, lm, 0.9, 3.2, 0.6, g).scale.setScalar(0.7);
+  trees.push({ x, z, mats:[tm, lm], op:1 }); }
+for (let i = 0; i < 46; i++){ const a = i / 46 * Math.PI * 2 + rand(-0.04, 0.04), r = ARENA + rand(8, 20); tree(Math.cos(a) * r, Math.sin(a) * r, rand(0.9, 1.5)); }
+for (let i = 0; i < 6; i++){ const a = rand(0, Math.PI * 2), r = rand(12, 20); tree(Math.cos(a) * r, Math.sin(a) * r, rand(0.8, 1.1)); }
+// nuvole
+const clouds = [];
+const cloudMat = M(0xffffff, { emissive:0x666666 });
+for (let i = 0; i < 9; i++){
+  const g = new THREE.Group(), a = rand(0, Math.PI * 2), r = rand(30, 90);
+  g.position.set(Math.cos(a) * r, rand(28, 40), Math.sin(a) * r);
+  for (let k = 0; k < 4; k++){ const s = mesh(new THREE.SphereGeometry(rand(2.5, 4), 10, 8), cloudMat, k * 3 - 4.5, rand(-0.5, 0.8), rand(-1, 1), g); s.castShadow = false; }
+  scene.add(g); clouds.push(g);
+}
+
+/* ================= rampe ================= */
+const ramps = [];
+function ramp(x, z, ang, L, H, W, col){
+  const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(L, 0); sh.lineTo(L, H); sh.lineTo(0, 0);
+  const geo = new THREE.ExtrudeGeometry(sh, { depth:W, bevelEnabled:false }); geo.translate(0, 0, -W / 2);
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ang; scene.add(g);
+  mesh(geo, M(col), 0, 0, 0, g);
+  // strisce gialle
+  for (let i = 1; i < 4; i++){ const s = mesh(new THREE.BoxGeometry(0.3, 0.05, W * 0.9), M(0xffffff), L * i / 4, H * i / 4 + 0.03, 0, g); s.rotation.z = Math.atan2(H, L); }
+  ramps.push({ x, z, ang, L, H, W });
+}
+ramp(10, 0, 0, 7, 2.2, 4.5, 0xff8a1a);
+ramp(-12, 12, Math.PI * 0.75, 7, 2.6, 4.5, 0x4fa3ff);
+ramp(-6, -16, Math.PI * 1.6, 8, 3, 4.5, 0xff6fb5);
+ramp(45, -20, Math.PI * 0.9, 8, 3, 5, 0x9a6bff);
+ramp(-40, -30, Math.PI * 0.25, 8, 3, 5, 0x2fbf55);
+ramp(20, 48, Math.PI * 1.3, 8, 3.2, 5, 0xffcc1a);
+function groundH(x, z){
+  let h = 0;
+  for (const r of ramps){
+    const dx = x - r.x, dz = z - r.z, c = Math.cos(r.ang), s = Math.sin(r.ang);
+    const lx = dx * c - dz * s, lz = dx * s + dz * c;
+    if (lx >= 0 && lx <= r.L && Math.abs(lz) <= r.W / 2) h = Math.max(h, lx / r.L * r.H);
+  }
+  return h;
+}
+
+/* ================= la macchinina ================= */
+const colHex = parseInt(B.colorHex(carSpec.color).slice(1), 16);
+const matBody = M(colHex), matDark = M(0x2a2f3a), matGlass = M(0xbfe8ff), matLight = M(0xd5dce6), matWhite = M(0xffffff), matInk = M(0x1d2b36);
+const matHub = carSpec.wheels === 'stella' ? M(0xffd43b) : M(0xd5dce6);
+const matPale = M(new THREE.Color(colHex).lerp(new THREE.Color(0xffffff), 0.6));
+// [lunghezza(x), altezza, larghezza(z), x, y, z, materiale]
+const SPECS = {
+  auto:   { boxes:[[3.4, 0.9, 1.9, 0, 0.75, 0, 'body'], [1.9, 0.85, 1.7, -0.25, 1.62, 0, 'cabin']], face:[0.7, 1.62], light:1.7, wx:[-1.1, 1.15] },
+  corsa:  { boxes:[[3.8, 0.6, 1.8, 0, 0.6, 0, 'body'], [1.1, 0.55, 1.1, -0.3, 1.15, 0, 'cabin'], [0.4, 0.12, 2, -1.8, 1.4, 0, 'dark'], [0.12, 0.6, 0.12, -1.8, 1.05, 0, 'dark']], face:[0.25, 1.15], light:1.9, wx:[-1.2, 1.25] },
+  camion: { boxes:[[2.6, 1.9, 1.95, -0.8, 1.45, 0, 'pale'], [1.3, 1.7, 1.95, 1.2, 1.35, 0, 'cabin'], [3.9, 0.3, 1.8, 0, 0.5, 0, 'dark']], face:[1.86, 1.75], light:1.86, wx:[-1.4, -0.6, 1.3] },
+  bus:    { boxes:[[4.2, 1.9, 2, 0, 1.45, 0, 'body'], [4.22, 0.7, 2.02, 0, 1.75, 0, 'glass']], face:[2.11, 1.75], light:2.1, wx:[-1.3, 1.35] },
+  ruspa:  { boxes:[[2.6, 0.9, 1.9, -0.2, 0.85, 0, 'body'], [1.3, 1.4, 1.5, -0.6, 2, 0, 'cabin'], [0.2, 0.7, 0.2, -1.3, 1.6, 0.6, 'dark']], face:[0.06, 2.0], light:1.1, wx:[-1, 0.6], arm:true },
+};
+const spec = SPECS[carSpec.body] || SPECS.auto;
+const WR = carSpec.wheels === 'giganti' ? 0.75 : 0.48;
+const lift = WR - 0.48;
+const carG = new THREE.Group(); scene.add(carG);
+const bodyG = new THREE.Group(); bodyG.position.y = lift; carG.add(bodyG);
+spec.boxes.forEach(([l, h, w, x, y, z, m]) => {
+  let mat = { body:matBody, dark:matDark, glass:matGlass, pale:matPale }[m];
+  if (m === 'cabin') mat = [matGlass, matGlass, matBody, matBody, matGlass, matGlass];
+  mesh(new THREE.BoxGeometry(l, h, w), mat, x, y, z, bodyG);
+});
+// occhi sul vetro davanti
+const eyeGeo = new THREE.SphereGeometry(0.24, 14, 10), pupGeo = new THREE.SphereGeometry(0.12, 10, 8);
+const eyes = [];
+[-0.33, 0.33].forEach(z => {
+  const e = mesh(eyeGeo, matWhite, spec.face[0] + 0.02, spec.face[1] + 0.06, z, bodyG); e.scale.set(0.45, 1, 1);
+  mesh(pupGeo, matInk, 0.13, 0.02, 0, e).scale.set(1.2, 1, 1);
+  eyes.push(e);
+});
+const smile = mesh(new THREE.TorusGeometry(0.22, 0.05, 8, 16, Math.PI), matInk, spec.face[0] + 0.03, spec.face[1] - 0.22, 0, bodyG);
+smile.rotation.set(0, Math.PI / 2, Math.PI);
+// fari
+[-0.6, 0.6].forEach(z => mesh(new THREE.SphereGeometry(0.17, 10, 8), M(0xffe680, { emissive:0x806a00 }), spec.light, 0.85, z, bodyG));
+// braccio della ruspa
+let armG = null;
+if (spec.arm){
+  armG = new THREE.Group(); armG.position.set(0.6, 1.2, 0); bodyG.add(armG);
+  mesh(new THREE.BoxGeometry(2, 0.35, 0.35), M(new THREE.Color(colHex).multiplyScalar(0.8)), 1, 0, 0.75, armG);
+  mesh(new THREE.BoxGeometry(2, 0.35, 0.35), M(new THREE.Color(colHex).multiplyScalar(0.8)), 1, 0, -0.75, armG);
+  mesh(new THREE.BoxGeometry(0.7, 0.8, 1.9), M(0x8a93a1), 2.1, -0.3, 0, armG);
+  armG.rotation.z = -0.35;
+}
+// ruote
+const wheels = [];
+const tireGeo = new THREE.CylinderGeometry(WR, WR, 0.45, 18), hubGeo = new THREE.CylinderGeometry(WR * 0.5, WR * 0.5, 0.47, carSpec.wheels === 'stella' ? 5 : 12);
+spec.wx.forEach(x => [-1, 1].forEach(side => {
+  const w = new THREE.Group(); w.position.set(x, WR, side * 0.98); carG.add(w);
+  mesh(tireGeo, matDark, 0, 0, 0, w).rotation.x = Math.PI / 2;
+  mesh(hubGeo, matHub, 0, 0, 0, w).rotation.x = Math.PI / 2;
+  mesh(new THREE.BoxGeometry(WR * 0.9, 0.12, 0.48), matLight, 0, 0, 0, w);
+  wheels.push(w);
+}));
+// segnale di arrivo
+const marker = mesh(new THREE.RingGeometry(0.9, 1.4, 28), new THREE.MeshBasicMaterial({ color:0xffd43b, transparent:true, opacity:0.9 }), 0, 0.06, 0);
+marker.rotation.x = -Math.PI / 2; marker.castShadow = false; marker.visible = false;
+
+/* ================= birilli ================= */
+const pinGeo = new THREE.CylinderGeometry(0.22, 0.35, 1.5, 10), pinTop = new THREE.SphereGeometry(0.28, 10, 8), pinBand = new THREE.CylinderGeometry(0.25, 0.27, 0.18, 10);
+const pinGroups = [];
+function pinSet(cx, cz){
+  const set = { pins:[], downT:0, cx, cz };
+  const rows = [[0, 0], [1, -0.55], [1, 0.55], [2, -1.1], [2, 0], [2, 1.1]];
+  rows.forEach(([r, s]) => {
+    const g = new THREE.Group(); scene.add(g);
+    mesh(pinGeo, matWhite, 0, 0.75, 0, g); mesh(pinTop, matWhite, 0, 1.6, 0, g); mesh(pinBand, M(0xe8322f), 0, 1.15, 0, g);
+    const p = { g, hx:cx + r * 1.0, hz:cz + s, vx:0, vy:0, vz:0, rx:0, rz:0, down:false };
+    g.position.set(p.hx, 0, p.hz); set.pins.push(p);
+  });
+  pinGroups.push(set);
+}
+pinSet(-18, -2); pinSet(14, 18); pinSet(28, -38); pinSet(-34, 30);
+
+/* ================= palloncini ================= */
+const balloonGeo = new THREE.SphereGeometry(0.75, 16, 12);
+const balloonCols = [0xff4d6d, 0xffd23f, 0x4dd2ff, 0x7cff6b, 0xc77dff, 0xff8a1a];
+const balloons = [];
+function placeBalloon(b){
+  // alcuni sopra le rampe (per prenderli in volo!), gli altri sul prato
+  if (Math.random() < 0.3){
+    const r = B.pick(ramps), c = Math.cos(r.ang), s = Math.sin(r.ang), d = r.L + 5;
+    b.x = r.x + c * d; b.z = r.z - s * d; b.y = r.H + 2.2;
+  } else {
+    const a = rand(0, Math.PI * 2), rr = rand(6, ARENA - 6);
+    b.x = Math.cos(a) * rr; b.z = Math.sin(a) * rr; b.y = rand(1.5, 2.3);
+  }
+  b.g.position.set(b.x, b.y, b.z); b.g.visible = true; b.popped = false; b.g.scale.setScalar(0.01); b.grow = 0;
+}
+for (let i = 0; i < 14; i++){
+  const g = new THREE.Group(); scene.add(g);
+  const col = B.pick(balloonCols);
+  const s = mesh(balloonGeo, M(col, { emissive:new THREE.Color(col).multiplyScalar(0.25) }), 0, 0.3, 0, g); s.scale.y = 1.2;
+  mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.4, 4), matInk, 0, -1.1, 0, g).castShadow = false;
+  const b = { g, col, phase:rand(0, 6), popped:false, t:0 };
+  placeBalloon(b); balloons.push(b);
+}
+
+/* ================= coriandoli 3D ================= */
+const confGeo = new THREE.BoxGeometry(0.25, 0.25, 0.05);
+const confetti = [];
+function pop3d(x, y, z, col, n){
+  for (let i = 0; i < (n || 22); i++){
+    const m = mesh(confGeo, new THREE.MeshBasicMaterial({ color:col != null && Math.random() < 0.5 ? col : B.pick(balloonCols) }), x, y, z);
+    m.castShadow = false;
+    confetti.push({ m, vx:rand(-6, 6), vy:rand(2, 9), vz:rand(-6, 6), life:rand(1, 1.6) });
+  }
+}
+
+/* ================= comandi ================= */
+const car = { x:0, z:6, y:0, vy:0, h:-Math.PI / 4, v:0, air:false, squash:0, squashV:0, honk:0, target:null };
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hit = new THREE.Vector3();
+let holding = false, started = false, popped = 0;
+function pointTo(e){
+  ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  if (ray.intersectObject(carG, true).length) return 'car';
+  if (ray.ray.intersectPlane(plane, hit)){
+    const r = Math.hypot(hit.x, hit.z);
+    if (r > ARENA){ hit.x *= ARENA / r; hit.z *= ARENA / r; }
+    car.target = { x:hit.x, z:hit.z }; marker.visible = true; marker.position.set(hit.x, 0.06, hit.z);
+  }
+}
+function begin(){
+  if (!started){ started = true; B.startEngine(); $('hint').classList.add('off'); }
+}
+cv.addEventListener('pointerdown', e => {
+  begin();
+  if (pointTo(e) === 'car'){ honk(); return; }
+  holding = true;
+});
+cv.addEventListener('pointermove', e => { if (holding) pointTo(e); });
+addEventListener('pointerup', () => { holding = false; });
+addEventListener('pointercancel', () => { holding = false; });
+function honk(){ B.sfx.clacson(); car.honk = 1; if (!car.air){ car.air = true; car.vy = 5; } }
+$('horn').addEventListener('pointerdown', e => { e.stopPropagation(); begin(); honk(); });
+B.onSoundOn = () => { if (started) B.startEngine(); };
+document.addEventListener('visibilitychange', () => { if (document.hidden) B.stopEngine(); else if (started) B.startEngine(); });
+
+/* ================= ciclo ================= */
+function resize(){ renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
+addEventListener('resize', resize); resize();
+const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
+let t = 0, last = performance.now(), wheelSpin = 0, blinkT = 0, idleT = 0;
+
+function step(dt){
+  t += dt;
+  // guida verso il punto toccato
+  let want = 0;
+  if (car.target){
+    const dx = car.target.x - car.x, dz = car.target.z - car.z, d = Math.hypot(dx, dz);
+    if (d < 1.5 && !holding){ car.target = null; marker.visible = false; }
+    else {
+      const wantH = Math.atan2(-dz, dx);
+      let diff = wantH - car.h; while (diff > Math.PI) diff -= Math.PI * 2; while (diff < -Math.PI) diff += Math.PI * 2;
+      const turn = 2.8 * dt * clamp(Math.abs(car.v) / 4, 0.4, 1);
+      car.h += clamp(diff, -turn, turn);
+      want = clamp(d * 1.6, 0, 14) * (Math.abs(diff) > 1.6 ? 0.55 : 1);
+    }
+  }
+  car.v += (want - car.v) * Math.min(1, dt * (want > car.v ? 1.6 : 3));
+  const fx = Math.cos(car.h), fz = -Math.sin(car.h);
+  car.x += fx * car.v * dt; car.z += fz * car.v * dt;
+  // bordo del prato: torna indietro dolcemente
+  const r = Math.hypot(car.x, car.z);
+  if (r > ARENA){ car.x *= ARENA / r; car.z *= ARENA / r; car.v *= 0.5; }
+
+  // rampe e salti
+  const gh = groundH(car.x, car.z);
+  if (car.air){
+    car.vy -= 22 * dt; car.y += car.vy * dt;
+    if (car.y <= gh){
+      const hard = car.vy < -8;
+      car.y = gh; car.air = false; car.vy = 0;
+      car.squashV = hard ? -6 : -3;
+      if (hard){ B.sfx.boing(); pop3d(car.x, 0.3, car.z, 0xffffff, 8); }
+    }
+  } else {
+    if (car.y - gh > 0.25 && car.v > 3){
+      // finita la rampa: si vola!
+      car.air = true; car.vy = car.v * 0.42 + 2; B.sfx.whoosh(); B.say(B.pick(['Uiii!', 'Si vola!', 'Wow!']));
+    } else car.y = gh;
+  }
+  car.squashV += (-car.squash * 140 - car.squashV * 8) * dt; car.squash += car.squashV * dt;
+
+  carG.position.set(car.x, car.y, car.z);
+  carG.rotation.y = car.h;
+  // inclinazione sulla rampa / in volo
+  const gAhead = groundH(car.x + fx * 1.2, car.z + fz * 1.2), gBehind = groundH(car.x - fx * 1.2, car.z - fz * 1.2);
+  const pitch = car.air ? clamp(car.vy * 0.03, -0.35, 0.35) : Math.atan2(gAhead - gBehind, 2.4);
+  carG.rotation.z += (pitch - carG.rotation.z) * Math.min(1, dt * 10);
+  bodyG.scale.set(1 - car.squash * 0.5, 1 + car.squash, 1 - car.squash * 0.5);
+  bodyG.position.y = lift + Math.sin(t * 30) * 0.02 * (car.v / 14);
+  wheelSpin -= car.v * dt / WR; wheels.forEach(w => w.rotation.z = wheelSpin);
+  if (armG) armG.rotation.z = -0.35 + (car.honk > 0 ? Math.sin(car.honk * Math.PI) * 0.7 : 0);
+  car.honk = Math.max(0, car.honk - dt * 1.2);
+  blinkT -= dt; if (blinkT < -3.2) blinkT = 0.14;
+  eyes.forEach(e => e.scale.y = blinkT > 0 ? 0.15 : 1);
+  smile.scale.setScalar(car.honk > 0 || car.air ? 1.5 : 1);
+  B.setEngine(clamp(car.v / 14, 0, 1) + (car.air ? 0.2 : 0));
+  marker.scale.setScalar(1 + Math.sin(t * 6) * 0.12);
+
+  // birilli
+  pinGroups.forEach(set => {
+    let allDown = true;
+    set.pins.forEach(p => {
+      if (!p.down){
+        allDown = false;
+        const dx = p.g.position.x - car.x, dz = p.g.position.z - car.z, d = Math.hypot(dx, dz);
+        if (d < 1.9 && car.y < 1.5){
+          p.down = true; const k = 1 / (d || 1);
+          p.vx = dx * k * (4 + car.v * 0.7) + fx * car.v * 0.6; p.vz = dz * k * (4 + car.v * 0.7) + fz * car.v * 0.6; p.vy = rand(5, 9);
+          p.rx = rand(-8, 8); p.rz = rand(-8, 8);
+          B.sfx.tonk();
+        }
+      } else {
+        p.vy -= 22 * dt;
+        p.g.position.x += p.vx * dt; p.g.position.y = Math.max(0, p.g.position.y + p.vy * dt); p.g.position.z += p.vz * dt;
+        if (p.g.position.y <= 0){ p.vy = Math.abs(p.vy) > 3 ? -p.vy * 0.35 : 0; p.vx *= 0.9; p.vz *= 0.9; p.rx *= 0.9; p.rz *= 0.9;
+          p.g.rotation.x = Math.PI / 2 * Math.sign(p.g.rotation.x || 1); }
+        else { p.g.rotation.x += p.rx * dt; p.g.rotation.z += p.rz * dt; }
+      }
+    });
+    const anyDown = set.pins.some(p => p.down);
+    if (anyDown){
+      set.downT += dt;
+      if (allDown && !set.cheered){ set.cheered = true; B.sfx.yay(); B.say('Strike!'); pop3d(set.cx + 1, 2, set.cz, null, 40); }
+      if (set.downT > 6 && Math.hypot(set.cx - car.x, set.cz - car.z) > 6){
+        set.downT = 0; set.cheered = false;
+        set.pins.forEach(p => { p.down = false; p.g.position.set(p.hx, 0, p.hz); p.g.rotation.set(0, 0, 0); });
+      }
+    }
+  });
+
+  // palloncini
+  balloons.forEach(b => {
+    if (b.popped){ b.t -= dt; if (b.t <= 0) placeBalloon(b); return; }
+    b.grow = Math.min(1, b.grow + dt * 2); b.g.scale.setScalar(b.grow);
+    b.g.position.y = b.y + Math.sin(t * 1.6 + b.phase) * 0.3;
+    b.g.rotation.z = Math.sin(t * 1.2 + b.phase) * 0.15;
+    const dx = b.x - car.x, dz = b.z - car.z, dy = b.g.position.y - (car.y + 1.2);
+    if (Math.hypot(dx, dz) < 2.2 && Math.abs(dy) < 2){
+      b.popped = true; b.g.visible = false; b.t = 3;
+      B.sfx.pop(); pop3d(b.x, b.g.position.y, b.z, b.col);
+      popped++; $('nBalloons').textContent = popped;
+      const sc = $('score'); sc.classList.remove('bump'); void sc.offsetWidth; sc.classList.add('bump');
+      if (popped % 10 === 0){ B.sfx.yay(); B.say(B.pick(['Bravo!', 'Evviva!', 'Bravissimo!'])); pop3d(car.x, 4, car.z, null, 60); }
+    }
+  });
+
+  // coriandoli
+  for (let i = confetti.length - 1; i >= 0; i--){
+    const p = confetti[i]; p.life -= dt; p.vy -= 14 * dt;
+    p.m.position.x += p.vx * dt; p.m.position.y += p.vy * dt; p.m.position.z += p.vz * dt;
+    p.m.rotation.x += 8 * dt; p.m.rotation.y += 6 * dt;
+    if (p.life <= 0 || p.m.position.y < 0){ scene.remove(p.m); p.m.material.dispose(); confetti.splice(i, 1); }
+  }
+  clouds.forEach((c, i) => { c.position.x += dt * (0.6 + i * 0.05); if (c.position.x > 110) c.position.x = -110; });
+
+  // telecamera che segue la macchinina sempre dallo stesso lato:
+  // così si vede la faccina e "tocca lì" vuol dire sempre lo stesso posto sullo schermo
+  const look = new THREE.Vector3(car.x + fx * car.v * 0.15, car.y * 0.5, car.z + fz * car.v * 0.15);
+  camLook.lerp(look, Math.min(1, dt * 3));
+  camPos.set(camLook.x, camLook.y + 13, camLook.z + 15);
+  camera.position.copy(camPos);
+  camera.lookAt(camLook.x, camLook.y + 1, camLook.z);
+  trees.forEach(tr => {
+    const covers = tr.z > car.z + 1 && tr.z < car.z + 18 && Math.abs(tr.x - car.x) < 7;
+    const want = covers ? 0.25 : 1;
+    if (Math.abs(tr.op - want) > 0.01){ tr.op += (want - tr.op) * Math.min(1, dt * 6); tr.mats.forEach(m => { m.opacity = tr.op; m.depthWrite = tr.op > 0.9; }); }
+  });
+  sun.position.set(car.x + 15, 30, car.z + 10); sun.target.position.set(car.x, 0, car.z);
+
+  // suggerimento se nessuno tocca per un po'
+  idleT = holding || car.target ? 0 : idleT + dt;
+  $('hint').classList.toggle('off', started && idleT < 8);
+}
+function frame(now){
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  step(dt);
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+<script src="../schermo-intero.js" data-after="soundBtn"></script>
+</body>
+</html>
