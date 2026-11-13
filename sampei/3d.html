@@ -102,7 +102,7 @@
 <div id="wrap">
   <canvas id="c"></canvas>
   <div class="hud">
-    <div class="pill" id="coins">🪙 0</div>
+    <div class="hudLeft"><div class="pill" id="coins">🪙 0</div><button class="hb" id="bTech">🎈</button></div>
     <div class="btns">
       <button class="hb" id="bAlbum">🐟 Album</button>
       <button class="hb" id="bShop">🛒 Negozio</button>
@@ -123,6 +123,7 @@
   <div id="nogl">Questo dispositivo non riesce a mostrare il 3D.<br><br><a class="hb" href="index.html">Gioca alla versione 2D</a></div>
 </div>
 
+<script src="gioco-comune.js"></script>
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
 </script>
@@ -134,127 +135,7 @@ import * as THREE from 'three';
    Stessi pesci, stesse regole e stesso salvataggio della versione 2D.
    ========================================================= */
 
-const HERO = 'Tommaso';
 
-/* ---------------- DATI: luoghi e pesci (identici alla versione 2D) ---------------- */
-const PLACES = [
-  { id:'torrente', name:'Torrente di montagna', cost:0,
-    sky:['#8fd3ff','#d9f1ff'], water:['#3fa7b8','#1d5f73'],
-    fish:[
-      {id:'cavedano', beh:'calmo', name:'Cavedano', min:.2, max:1.5, w:40, str:2, price:10, col:['#93a2a6','#eef1ee','#c9773a'], pat:'plain',
-       fact:'Il cavedano mangia quasi di tutto: insetti, vermi e perfino le ciliegie che cadono in acqua!'},
-      {id:'trota', beh:'scattista', name:'Trota fario', min:.3, max:2.5, w:30, str:4, price:25, col:['#8a7a45','#f1e2b8','#d33b2c'], pat:'spots', dots2:'#2b2b2b',
-       fact:'La trota fario vive in acque fredde e piene di ossigeno. Si riconosce dai puntini rossi e neri sui fianchi.'},
-      {id:'barbo', beh:'testardo', name:'Barbo', min:.5, max:3, w:20, str:5, price:18, col:['#a08c5a','#efe3c0','#7a5f2e'], pat:'plain', barbels:true,
-       fact:'Il barbo ha quattro "baffi" sotto la bocca, chiamati barbigli, che usa per cercare il cibo sul fondo.'},
-      {id:'temolo', beh:'scattista', name:'Temolo', min:.3, max:1.8, w:9, str:4, price:40, col:['#7b8794','#dfe5ea','#8a3a6a'], pat:'spots', sail:true,
-       fact:'Il temolo ha una pinna sul dorso enorme, come una vela. Il suo nome scientifico, Thymallus, viene dal timo: si dice che profumi di quell\'erba!'},
-      {id:'regina', beh:'scattista', name:'Trota Regina', min:6, max:12, w:1.6, str:9, price:30, col:['#c9a227','#fff1b8','#b0421f'], pat:'spots', legend:true,
-       fact:'Leggenda del torrente: una trota grande come un cane, che nessun pescatore è mai riuscito a prendere... fino a oggi!'},
-    ]},
-  { id:'lago', name:'Lago dei canneti', cost:150,
-    sky:['#ffcf8f','#ffeccc'], water:['#4f9a7a','#23523f'],
-    fish:[
-      {id:'persico', beh:'calmo', name:'Persico reale', min:.2, max:1.5, w:40, str:3, price:15, col:['#8a9a32','#f0e7b0','#3b4a1a'], pat:'stripes',
-       fact:'Il persico reale ha strisce scure sui fianchi e una pinna sul dorso con spine appuntite: maneggialo con cura!'},
-      {id:'tinca', beh:'calmo', name:'Tinca', min:.4, max:2.5, w:30, str:4, price:18, col:['#5d6b2c','#c9b85a','#d07a2a'], pat:'plain',
-       fact:'La tinca ha la pelle scivolosissima e gli occhi rosso-arancio. Ama i fondali fangosi pieni di piante.'},
-      {id:'carpa', beh:'testardo', name:'Carpa', min:1, max:12, w:20, str:6, price:8, col:['#a7853e','#f0d68e','#7b5a22'], pat:'scales', barbels:true,
-       fact:'La carpa può vivere anche più di 40 anni! Cerca il cibo sul fondo con i suoi barbigli.'},
-      {id:'luccio', beh:'furbo', name:'Luccio', min:1, max:10, w:9, str:8, price:14, col:['#4f6b35','#e3e6b8','#d6dc8a'], pat:'spots', long:true,
-       fact:'Il luccio è il re dei predatori d\'acqua dolce: ha centinaia di denti e caccia restando nascosto tra le piante.'},
-      {id:'siluro', beh:'testardo', name:'Siluro Barbagrigia', min:30, max:80, w:1.6, str:10, price:5, col:['#3e3f3a','#a8a894','#2a2a26'], pat:'plain', barbels:true, long:true, legend:true,
-       fact:'Si racconta che in fondo al lago viva un siluro vecchissimo, con i baffi lunghi come fruste. I siluri veri possono superare i 2 metri!'},
-    ]},
-  { id:'mare', name:'Molo sul mare', cost:400,
-    sky:['#6ec6ff','#e6f7ff'], water:['#1f7fc4','#0b3b6b'],
-    fish:[
-      {id:'sgombro', beh:'scattista', name:'Sgombro', min:.2, max:1, w:40, str:3, price:15, col:['#2f7f95','#eef3f5','#14384d'], pat:'waves',
-       fact:'Lo sgombro nuota in banchi enormi, con migliaia di compagni, e non smette quasi mai di muoversi.'},
-      {id:'orata', beh:'furbo', name:'Orata', min:.3, max:3, w:28, str:5, price:30, col:['#9aa8b0','#eef2f4','#e8b923'], pat:'band', tall:true,
-       fact:'L\'orata ha una striscia dorata tra gli occhi: è proprio da lì che viene il suo nome!'},
-      {id:'spigola', beh:'scattista', name:'Spigola', min:.5, max:5, w:22, str:6, price:28, col:['#7d8a96','#eef1f3','#4a5763'], pat:'plain',
-       fact:'Al nord la spigola la chiamano branzino: due nomi diversi, stesso pesce!'},
-      {id:'dentice', beh:'testardo', name:'Dentice', min:1, max:10, w:9, str:8, price:26, col:['#c27f73','#f6dfd6','#3a7fd0'], pat:'spots', tall:true,
-       fact:'Il dentice ha denti forti e robusti e vive vicino ai fondali rocciosi.'},
-      {id:'tonno', beh:'maratoneta', name:'Tonno rosso', min:80, max:250, w:1.6, str:10, price:3, col:['#1f3b66','#dfe7ee','#f5c518'], pat:'finlets', legend:true,
-       fact:'Il tonno rosso è un nuotatore velocissimo: attraversa interi mari e può pesare più di un pianoforte!'},
-    ]},
-];
-const ALL_FISH = PLACES.flatMap(p => p.fish);
-
-const BEHAVIOR = {
-  calmo:      { label:'😌 Tranquillo', desc:'Tira poco e si stanca presto.',          moves:{run:2, dive:2, charge:1}, rest:[3.0,4.5], len:1.0 },
-  scattista:  { label:'⚡ Scattista',  desc:'Salta fuori dall\'acqua e dà strattoni veloci.', moves:{run:3, jump:2, charge:1}, rest:[1.6,2.8], len:.75 },
-  testardo:   { label:'🪨 Testardo',   desc:'Si butta sul fondo e tira a lungo.',     moves:{dive:3, run:2},           rest:[2.4,3.6], len:1.5 },
-  furbo:      { label:'🦊 Furbo',      desc:'Cambia direzione e ti viene incontro per liberarsi.', moves:{charge:3, run:2, jump:1}, rest:[1.8,3.0], len:1.0 },
-  maratoneta: { label:'🏃 Maratoneta', desc:'Parte con una fuga lunghissima.',        moves:{run:4, dive:1},           rest:[2.2,3.4], len:1.4, firstRun:true },
-};
-const MOVE_ICON = { run:'⚡', jump:'🐬', charge:'↩️', dive:'⬇️' };
-
-const UPGRADES = {
-  rod:  { ico:'🎣', title:'Canna', costs:[0,60,160,350,700],
-          names:['Canna di bambù','Canna in fibra','Canna in carbonio','Canna da campione','Canna d\'oro'],
-          desc:'Più resistente: la lenza si tende meno quando il pesce tira.' },
-  reel: { ico:'🌀', title:'Mulinello', costs:[0,50,140,300,600],
-          names:['Mulinello cigolante','Mulinello liscio','Mulinello veloce','Mulinello turbo','Mulinello d\'oro'],
-          desc:'Recuperi il filo più in fretta.' },
-  bait: { ico:'🪱', title:'Esca', costs:[0,40,120,260,520],
-          names:['Mollica di pane','Vermi','Camole','Esca artificiale','Esca segreta'],
-          desc:'I pesci abboccano prima, e arrivano più spesso quelli rari.' },
-};
-
-/* ---------------- SALVATAGGIO (condiviso con la versione 2D) ---------------- */
-const SAVE_KEY = 'lenza-doro-v1';
-const DEFAULT_SAVE = { coins:0, rod:0, reel:0, bait:0, places:['torrente'], place:'torrente', album:{}, released:0, muted:false, music:true, seenIntro:false, pity:{} };
-let save = load();
-function load(){
-  try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s) return Object.assign({}, DEFAULT_SAVE, {pity:{}}, s); } catch(e){}
-  return Object.assign({}, DEFAULT_SAVE, {album:{}, places:['torrente'], pity:{}});
-}
-function persist(){ try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch(e){} }
-const place = () => PLACES.find(p => p.id === save.place) || PLACES[0];
-
-/* ---------------- AUDIO ---------------- */
-let AC = null;
-function audio(){ if (!AC) { try { AC = new (window.AudioContext||window.webkitAudioContext)(); } catch(e){} } if (AC && AC.state==='suspended') AC.resume(); return AC; }
-function tone(f, d, type='sine', vol=.15, slide=0, delay=0){
-  if (save.muted) return; const a = audio(); if (!a) return;
-  const t = a.currentTime + delay, o = a.createOscillator(), g = a.createGain();
-  o.type = type; o.frequency.setValueAtTime(f, t);
-  if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + d);
-  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + d);
-  o.connect(g).connect(a.destination); o.start(t); o.stop(t + d + .02);
-}
-function noise(d=.3, vol=.2, freq=1200){
-  if (save.muted) return; const a = audio(); if (!a) return;
-  const len = Math.floor(a.sampleRate * d), b = a.createBuffer(1, len, a.sampleRate), ch = b.getChannelData(0);
-  for (let i=0;i<len;i++) ch[i] = (Math.random()*2-1) * (1 - i/len);
-  const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
-  s.buffer = b; f.type = 'lowpass'; f.frequency.value = freq; g.gain.value = vol;
-  s.connect(f).connect(g).connect(a.destination); s.start();
-}
-const SFX = {
-  cast(){ tone(500,.25,'triangle',.08,180); },
-  splash(){ noise(.35,.25,900); },
-  nibble(){ tone(900,.06,'sine',.06); },
-  bite(){ tone(660,.12,'square',.1); tone(990,.15,'square',.1,0,.12); },
-  click(){ tone(1300,.03,'square',.025); },
-  snap(){ tone(1400,.35,'sawtooth',.12,90); noise(.2,.15,3000); },
-  lose(){ tone(400,.25,'triangle',.1,200); tone(300,.35,'triangle',.1,150,.2); },
-  win(){ [523,659,784,1046].forEach((f,i)=>tone(f,.25,'triangle',.12,0,i*.11)); },
-  coin(){ tone(1200,.08,'square',.06); tone(1600,.12,'square',.06,0,.07); },
-  warn(){ tone(220,.08,'square',.05); },
-  alert(){ tone(880,.07,'triangle',.08); tone(1175,.09,'triangle',.08,0,.08); },
-  whoosh(){ tone(300,.4,'sawtooth',.05,900); },
-  omen(){ tone(55,1.2,'sine',.3,40); tone(82,1.2,'triangle',.08,60); },
-  drum(){ tone(70,.18,'sine',.28,45); },
-  legend(){ [523,659,784,1046,784,1046,1318].forEach((f,i)=>tone(f,.3,'triangle',.13,0,i*.12)); },
-};
-
-const rand = (a,b) => a + Math.random()*(b-a);
-const lerp = (a,b,t) => a + (b-a)*t;
-const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
 const V = (x=0,y=0,z=0) => new THREE.Vector3(x,y,z);
 
 /* =========================================================
@@ -502,6 +383,24 @@ bobber.add(mesh(new THREE.SphereGeometry(.12, 10, 6, 0, Math.PI*2, 0, Math.PI/2)
 const bLow = mesh(new THREE.SphereGeometry(.12, 10, 6, 0, Math.PI*2, Math.PI/2, Math.PI/2), mat('#ffffff')); bobber.add(bLow);
 bobber.add(mesh(new THREE.CylinderGeometry(.015, .015, .25, 4), mat('#1d2b36'), 0, .2, 0));
 bobber.scale.setScalar(1.7); scene.add(bobber);
+// piombo per la pesca a fondo
+const sinker = new THREE.Group();
+sinker.add(mesh(new THREE.SphereGeometry(.09, 8, 6), mat('#6b737a', {metalness:.5, roughness:.4})));
+sinker.add(mesh(new THREE.TorusGeometry(.06, .012, 4, 10, Math.PI), mat('#c9a227', {metalness:.6}), .1, -.06, 0));
+sinker.add(mesh(new THREE.SphereGeometry(.04, 6, 4), mat('#c0705a'), .16, -.08, 0));
+sinker.scale.setScalar(1.7); scene.add(sinker);
+// cucchiaino che gira e luccica
+const spoon = new THREE.Group();
+const spoonBlade = mesh(new THREE.SphereGeometry(.12, 10, 6), new THREE.MeshStandardMaterial({ color:'#e8edf0', metalness:.9, roughness:.15, flatShading:true }));
+spoonBlade.scale.set(.25, 1, .6); spoon.add(spoonBlade);
+spoon.add(mesh(new THREE.SphereGeometry(.03, 6, 4), mat('#e74c3c'), 0, .14, 0));
+spoon.scale.setScalar(1.7); scene.add(spoon);
+// mosca: corpo marrone e ali bianche
+const fly = new THREE.Group();
+fly.add(mesh(new THREE.CapsuleGeometry(.03, .08, 2, 6), mat('#7a4a24'))); fly.children[0].rotation.z = Math.PI/2;
+[-1, 1].forEach(sd => { const w = mesh(new THREE.CircleGeometry(.06, 8), new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:.9, side:THREE.DoubleSide }), sd*.03, .06, 0); w.rotation.set(0, Math.PI/2, sd*.5); w.scale.set(1, 1.6, 1); fly.add(w); });
+fly.scale.setScalar(2.2); scene.add(fly);
+const TACKLE = { galleggiante:bobber, fondo:sinker, spinning:spoon, mosca:fly };
 const lineMat = new THREE.MeshBasicMaterial({ color:0xffffff });
 
 let tip = V(), tipPrev = V();
@@ -521,7 +420,8 @@ function rebuildRod(ten){
   // vibrazione
   let vib = 0;
   if (S === 'reel') vib = Math.max(0, (R.ten - 60) / 40) * .09 + (holding && (R.mode === 'run' || R.mode === 'jump') ? .03 : 0) + (R.mode === 'warn' ? .025 : 0);
-  if (S === 'bite') vib = fish.legend ? .08 : .04;
+  if (S === 'bite') vib = fish.legend ? .08 : tech === 'fondo' ? .1 : .04;
+  if (S === 'wait' && tech === 'fondo' && nibble > 0) vib = .05;   // a fondo l'assaggio si vede sulla punta della canna
   tipT.x += Math.sin(now*70) * vib; tipT.y += Math.cos(now*57) * vib;
   tip.copy(tipT);
   const curve = new THREE.CatmullRomCurve3([back, HAND.clone(), mid, tipT]);
@@ -630,12 +530,13 @@ function updateFx(dt){
    LOGICA DI GIOCO (stessa della versione 2D, in 3D)
    ========================================================= */
 let S = 'idle', T = 0, now = 0;
-let holding = false, uiOpen = false;
+let holding = false;
 let power = 0;
 const castFrom = V(), castTo = V();
 const bob = V();
 let waitT = 0, nibT = 0, nibble = 0, biteT = 0;
-let fish = null, kg = 0, fish3d = null, omen = false, forceFish = null;
+let fish = null, kg = 0, fish3d = null, omen = false;
+let tech = 'galleggiante', spinT = 0, spinU = 1, startDist = 100;   // tecnica del lancio in corso
 let R = null;
 let tmpMsg = {t:'', until:0};
 let reelTick = 0, warnTick = 0, shake = 0;
@@ -646,14 +547,14 @@ function say(t, d=2.2){ tmpMsg = {t, until: now + d}; }
 
 function press(){
   audio();
-  if (uiOpen) return;
+  if (UI.open) return;
   holding = true;
   if (S === 'idle') setState('charge');
   else if (S === 'wait'){
     say(nibble > 0 ? 'Era solo un assaggio! Aspetta che il galleggiante vada SOTTO 👀' : 'Shh... aspetta che abbocchi!');
     waitT += 1.2;
   }
-  else if (S === 'bite') startReel();
+  else if (S === 'bite') startReel(startDist);
 }
 function release(){ holding = false; if (S === 'charge') doCast(); }
 /* Mira: trascinando a destra/sinistra mentre carichi il lancio (o con le frecce ← →) */
@@ -680,26 +581,6 @@ function doCast(){
   SFX.cast(); setState('cast');
 }
 
-function pickFish(){
-  const pl = place();
-  if (forceFish){ const f = ALL_FISH.find(z => z.id === forceFish); forceFish = null; if (f) return f; }
-  const leg = pl.fish.find(f => f.legend);
-  if (leg && power >= 0.55){
-    const pity = save.pity[pl.id] || 0;
-    if (Math.random() < 0.02 + pity*0.012 + save.bait*0.01){ save.pity[pl.id] = 0; persist(); return leg; }
-    save.pity[pl.id] = pity + 1; persist();
-  }
-  const list = pl.fish.filter(f => !f.legend);
-  const ws = list.map(f => f.w < 12 ? f.w * (0.5 + power*1.5) * (1 + save.bait*0.35) : f.w);
-  let r = Math.random() * ws.reduce((a,b)=>a+b, 0);
-  for (let i=0;i<list.length;i++){ r -= ws[i]; if (r <= 0) return list[i]; }
-  return list[0];
-}
-function rollWeight(f){
-  const e = Math.max(1.1, 2.2 - power*0.7 - save.bait*0.12);
-  const v = f.min + (f.max - f.min) * Math.pow(Math.random(), e);
-  return v >= 10 ? Math.round(v*10)/10 : Math.round(v*100)/100;
-}
 function fishLen(){ return fish.legend ? 3.4 : .8 + Math.min(1, kg/fish.max) * 1.0; }   // dimensioni esagerate apposta: si vedono meglio
 
 function prepareFish(){
@@ -707,10 +588,10 @@ function prepareFish(){
   fish3d = buildFish3D(fish); fish3d.visible = false; scene.add(fish3d);
 }
 
-function startReel(){
+function startReel(d = 100){
   SFX.bite();
   const b = BEHAVIOR[fish.beh];
-  R = { dist:100, ten:30, mode:'calm', modeT: (b.firstRun || fish.legend) ? .5 : rand(1.2,2.2), dur:1, next:null, forced: b.firstRun ? 'run' : null,
+  R = { dist:d, ten:30, mode:'calm', modeT: (b.firstRun || fish.legend) ? .5 : rand(1.2,2.2), dur:1, next:null, forced: b.firstRun ? 'run' : null,
         slack:0, over:0, sway:0, depth:0, angry:false, drum:0,
         sz: fish.legend ? 1 : Math.min(1, kg/fish.max),   // quanto è grosso (0..1)
         lat:0, latT:0, head:0, base:V(), prev:null };
@@ -753,7 +634,7 @@ function catchFish(){
   if (fish.legend){ SFX.legend(); shake = .35; splash(V(0, 2.5, -2), 60, true, true); } else SFX.win();
   splash(bob, 30, true);
   setState('caught');
-  showCard();
+  showCard(fish, kg);
 }
 function jumpPos(){
   const p = 1 - R.modeT / R.dur, H = fish.legend ? 4 : 2.6;
@@ -772,28 +653,58 @@ function update(dt){
     if (p >= 1){
       SFX.splash(); splash(castTo, 16); ripple(castTo);
       bob.copy(castTo);
-      waitT = rand(2, 5) * (1 - save.bait*0.13);
-      nibT = rand(.6, 1.5); nibble = 0;
-      fish = pickFish(); kg = rollWeight(fish); omen = false; prepareFish();
-      if (fish.legend) waitT += 2.5;
-      setState('wait');
+      fish = pickFishFor(power); kg = rollWeightFor(fish, power); omen = false; prepareFish();
+      tech = save.tech; startDist = 100;
+      if (tech === 'spinning'){
+        spinT = rand(1.2, 4) * (1 - baitQ()*.12); spinU = 1;   // secondi di recupero prima dell'attacco
+        setState('spin');
+      } else {
+        waitT = rand(2, 5) * TECH_WAIT[tech] * (1 - baitQ()*0.13);
+        nibT = rand(.6, 1.5); nibble = 0;
+        if (fish.legend) waitT += 2.5;
+        setState('wait');
+      }
     }
   }
   else if (S === 'wait'){
     if (flow) bob.x -= dt * .08;
     waitT -= dt; nibT -= dt; nibble = Math.max(0, nibble - dt);
-    if (nibT <= 0 && waitT > 0.6){ nibble = .25; nibT = rand(.7, 1.8); SFX.nibble(); ripple(bob, .15); }
-    bob.y = waveH(bob.x, bob.z, now) - (nibble > 0 ? .1 : 0);
-    if (fish.legend && !omen && T > 1){ omen = true; SFX.omen(); shake = .12; say('😮 Un\'ombra ENORME passa sotto il galleggiante...', 3.5); }
+    if (nibT <= 0 && waitT > 0.6){
+      nibble = .25; nibT = rand(.7, 1.8);
+      if (tech === 'fondo') SFX.tink();
+      else if (tech === 'mosca'){ SFX.rise(); ripple(V(bob.x + rand(-.8, .8), 0, bob.z + rand(-.8, .8)), .2); }   // un pesce sale a guardare
+      else { SFX.nibble(); ripple(bob, .15); }
+    }
+    if (tech === 'fondo') bob.y = -1.6;                                   // il piombo sta sul fondo
+    else bob.y = waveH(bob.x, bob.z, now) - (nibble > 0 && tech === 'galleggiante' ? .1 : 0);
+    if (fish.legend && !omen && T > 1){ omen = true; SFX.omen(); shake = .12; say('😮 Un\'ombra ENORME passa sotto la tua esca...', 3.5); }
     if (waitT <= 0){
-      biteT = 1.05 + save.bait*0.08;
-      SFX.bite(); splash(bob, fish.legend ? 30 : 10, fish.legend); ripple(bob, .3);
+      biteT = TECH_BITE[tech] + baitQ()*0.08;
+      if (tech === 'fondo') SFX.bell(); else if (tech === 'mosca') SFX.splash(); else SFX.bite();
+      if (tech !== 'fondo'){ splash(bob, fish.legend ? 30 : 10, fish.legend); ripple(bob, .3); }
       if (fish.legend) shake = .3;
       setState('bite');
     }
   }
+  else if (S === 'spin'){
+    // spinning: tenendo premuto l'esca nuota verso di te, i predatori la inseguono
+    const len = Math.max(1, castTo.distanceTo(END));
+    if (holding){ spinU -= (3.2 + save.reel*.4) * dt / len; spinT -= dt; }
+    else spinT -= dt*.3;   // da ferma attira molto meno
+    bob.lerpVectors(END, castTo, spinU);
+    bob.y = holding ? -.25 : Math.max(-1.2, bob.y - dt*.6);
+    if (fish.legend && !omen && T > .8){ omen = true; SFX.omen(); shake = .12; say('😮 Un\'ombra ENORME insegue la tua esca...', 3.5); }
+    if (spinT <= 0){
+      startDist = clamp(spinU*100, 8, 100);
+      splash(bob, fish.legend ? 30 : 14, fish.legend); ripple(bob, .4); SFX.splash();
+      if (fish.legend) shake = .3;
+      if (holding){ say('💥 Ferrata! Ha attaccato l\'esca!', 1.6); startReel(startDist); }
+      else { biteT = TECH_BITE.spinning + baitQ()*.08; setState('bite'); }
+    } else if (spinU <= .06){ say('Nessun attacco questa volta... rilancia! 🥄', 2.2); setState('idle'); }
+  }
   else if (S === 'bite'){
-    bob.y = -.25 + Math.sin(now*30) * (fish.legend ? .08 : .03);
+    if (tech === 'fondo'){ bob.y = -1.6; if (Math.floor(T*6) !== Math.floor((T-dt)*6)) SFX.tink(); }
+    else bob.y = -.25 + Math.sin(now*30) * (fish.legend ? .08 : .03);
     if (T > biteT) lose('Troppo tardi! Ha mangiato l\'esca ed è scappato 😅');
   }
   else if (S === 'reel'){
@@ -886,27 +797,40 @@ function updateScene(dt){
   kid.position.y = seatY - .75 + (S === 'caught' ? Math.abs(Math.sin(now*8)) * .15 : 0);
   KID.arms[0].rotation.x = .55 + (S === 'reel' && holding ? Math.sin(now*25) * .15 : 0);
 
-  const ten = S === 'reel' ? R.ten : (S === 'bite' ? 30 : 0);
+  const ten = S === 'reel' ? R.ten : S === 'bite' ? (tech === 'fondo' ? 45 : 30) : (S === 'wait' && tech === 'fondo') ? 10 : (S === 'spin' && holding) ? 14 : 0;
   rebuildRod(ten);
   crank.parent.rotation.x = S === 'reel' && holding ? now*20 : 0;
 
   // galleggiante e filo
   let lineEnd = null, sag = .6;
+  const tackleTech = (S === 'idle' || S === 'charge' || S === 'cast') ? save.tech : tech;
+  const tackle = TACKLE[tackleTech];
+  Object.values(TACKLE).forEach(o => o.visible = false);
+  const topY = tackleTech === 'galleggiante' ? .3 : .12;   // dove si attacca il filo
   if (S === 'idle' || S === 'charge' || S === 'lost'){
     bob.copy(tip).add(V(Math.sin(now*2)*.05, S === 'lost' ? -.6 : S === 'charge' ? -.45 : -1.1, 0));
-    bobber.visible = S !== 'lost' && S !== 'charge';
-    lineEnd = bob.clone().add(V(0, .3, 0)); sag = 0;
+    tackle.visible = S !== 'lost' && S !== 'charge';
+    lineEnd = bob.clone().add(V(0, topY, 0)); sag = 0;
   } else {
-    bobber.visible = true;
-    lineEnd = bob.clone().add(V(0, .3, 0));
-    sag = S === 'reel' ? (1 - R.ten/100) * 1.4 : S === 'cast' ? .1 : .7;
+    tackle.visible = !(tackleTech === 'mosca' && S === 'bite');   // la mosca se l'è presa il pesce
+    lineEnd = bob.clone().add(V(0, topY, 0));
+    sag = S === 'reel' ? (1 - R.ten/100) * 1.4 : S === 'cast' ? .1 : tech === 'fondo' ? .05 : S === 'spin' ? .3 : .7;
   }
-  bobber.position.copy(bob); bobber.rotation.z = Math.sin(now*3)*.1;
+  tackle.position.copy(bob); tackle.rotation.z = Math.sin(now*3)*.1;
+  if (tackleTech === 'spinning') tackle.rotation.y = now * 14;   // il cucchiaino gira
 
   // pesce
   if (fish3d){
     fish3d.visible = false;
-    if (S === 'wait' && fish.legend && omen){
+    if (S === 'spin' && !fish.legend && spinT < 1.6){
+      // un predatore insegue l'esca prima di attaccare
+      const away = castTo.clone().sub(END).setY(0).normalize();
+      fish3d.visible = true; setSil(fish3d, true); fish3d.scale.setScalar(fishLen() * 1.2);
+      fish3d.position.copy(bob).addScaledVector(away, spinT*1.5 + fishLen()*.6); fish3d.position.y = -.25;
+      fish3d.rotation.set(0, Math.atan2(away.x, away.z), 0);
+      fish3d.userData.tail.rotation.y = Math.sin(now*18) * .5;
+    }
+    else if ((S === 'wait' || S === 'spin') && fish.legend && omen){
       fish3d.visible = true; setSil(fish3d, true, true);
       const a = now*.6; fish3d.scale.setScalar(4);
       fish3d.position.set(bob.x + Math.sin(a)*4, -1.8, bob.z + Math.cos(a)*2.5);
@@ -915,7 +839,7 @@ function updateScene(dt){
     else if (S === 'wait' && waitT < 1.6){
       fish3d.visible = true; setSil(fish3d, true);
       fish3d.scale.setScalar(fishLen());
-      fish3d.position.set(bob.x + waitT*2.2, -.6, bob.z - waitT*.6);
+      fish3d.position.set(bob.x + waitT*2.2, tech === 'fondo' ? -1.5 : -.6, bob.z - waitT*.6);
       fish3d.rotation.set(0, 1.83, 0);   // nuota verso il galleggiante
     }
     else if (S === 'bite'){
@@ -945,7 +869,7 @@ function updateScene(dt){
   else lineMat.color.setRGB(1, 1, 1);
 
   // telecamera: segue la lotta e trema
-  const fightCam = S === 'wait' || S === 'bite' || S === 'reel';
+  const fightCam = S === 'wait' || S === 'bite' || S === 'reel' || S === 'spin';
   let lookWant = fightCam ? V(bob.x*.7, .2, Math.min(-6, bob.z*.85)) : LOOK_BASE.clone().add(V(aim*4, 0, 0));
   if (S === 'reel' && R.mode === 'jump') lookWant = V(bob.x*.9, 1.5, bob.z);
   camLook.lerp(lookWant, dt*2);
@@ -984,8 +908,16 @@ function hintText(){
     case 'idle': return `🎣 ${key} per caricare il lancio, poi lascia!`;
     case 'charge': return matchMedia('(pointer:fine)').matches ? '↔️ Muovi il mouse (o ← →) per mirare, poi lascia!' : '↔️ Trascina a destra o sinistra per mirare, poi lascia!';
     case 'cast': return 'Vola!';
-    case 'wait': return '👀 Aspetta... quando il galleggiante va SOTTO, clicca!';
-    case 'bite': return '❗ ABBOCCA! CLICCA SUBITO!';
+    case 'wait':
+      if (tech === 'fondo') return '👀 Guarda la punta della canna: quando trema forte e suona il campanello, clicca!';
+      if (tech === 'mosca') return '👀 Occhio alla mosca: quando un pesce la prende, clicca SUBITO!';
+      return '👀 Aspetta... quando il galleggiante va SOTTO, clicca!';
+    case 'spin': return holding ? '🥄 Recupera... i predatori inseguono l\'esca!' : `${key} per far nuotare l'esca verso di te`;
+    case 'bite':
+      if (tech === 'fondo') return '🔔 Driiin! ABBOCCA! CLICCA!';
+      if (tech === 'mosca') return '💦 L\'ha presa! CLICCA SUBITO!';
+      if (tech === 'spinning') return '💥 Attacco! CLICCA SUBITO!';
+      return '❗ ABBOCCA! CLICCA SUBITO!';
     case 'reel':
       if (R.ten >= 85) return '🔥 TROPPO TESA! MOLLA!';
       if (R.mode==='warn') return '👀 Attento! Guarda l\'icona: sta per fare una mossa...';
@@ -1021,211 +953,8 @@ function updateHud(){
     const p = toScreen(V(0, 2.6, 0));
     bangEl.style.display = 'flex'; bangEl.style.left = p.x + 'px'; bangEl.style.top = p.y + 'px';
   } else bangEl.style.display = 'none';
-  coinsEl.textContent = '🪙 ' + save.coins;
-  hudBtns.forEach(b => b.disabled = S !== 'idle');
+  hudTick(S);
 }
-
-/* ---------------- DISEGNO 2D DEI PESCI (schede e album) ---------------- */
-function drawFish(c, x, y, L, f, o={}){
-  const dir = o.dir || 1, wig = o.wig || 0;
-  const h = L * (f.tall ? .44 : f.long ? .24 : .32);
-  const sil = !!o.sil;
-  const body = sil ? '#13222c' : f.col[0], belly = sil ? '#13222c' : f.col[1], acc = sil ? '#13222c' : f.col[2];
-  c.save(); c.translate(x, y); c.rotate(o.rot || 0); c.scale(dir, 1); c.globalAlpha = o.alpha ?? 1;
-  c.lineJoin = 'round';
-  if (f.legend && (!sil || o.glow)){ c.shadowColor = '#ffd84a'; c.shadowBlur = L*.12; }
-  const tw = Math.sin(wig) * h * .25;
-  c.fillStyle = body;
-  c.beginPath(); c.moveTo(-L*.36, 0); c.lineTo(-L*.56, -h*.6 + tw); c.quadraticCurveTo(-L*.47, tw, -L*.56, h*.6 + tw); c.closePath(); c.fill();
-  const df = f.sail ? 1.5 : .55;
-  c.beginPath(); c.moveTo(-L*.18, -h*.4); c.quadraticCurveTo(-L*.02, -h*(.5 + df), L*.14, -h*.42); c.closePath(); c.fill();
-  c.beginPath(); c.moveTo(-L*.05, h*.42); c.lineTo(-L*.14, h*.72); c.lineTo(L*.06, h*.45); c.closePath(); c.fill();
-  c.beginPath(); c.ellipse(0, 0, L*.42, h*.5, 0, 0, Math.PI*2); c.fill();
-  c.shadowBlur = 0;
-  if (!sil){
-    c.save(); c.clip();
-    c.fillStyle = belly; c.beginPath(); c.ellipse(0, h*.34, L*.44, h*.3, 0, 0, Math.PI*2); c.fill();
-    c.fillStyle = acc;
-    if (f.pat==='spots'){ for (let i=0;i<12;i++){ c.fillStyle = (f.dots2 && i%3===1) ? f.dots2 : acc; c.beginPath(); c.arc(-L*.28 + ((i*37)%60)/60*L*.52, -h*.32 + ((i*53)%40)/40*h*.45, h*.06, 0, Math.PI*2); c.fill(); } }
-    if (f.pat==='stripes'){ c.globalAlpha *= .7; for (let i=0;i<6;i++) c.fillRect(-L*.28 + i*L*.1, -h*.5, L*.04, h*.7); }
-    if (f.pat==='waves'){ c.strokeStyle = acc; c.lineWidth = Math.max(1, h*.05); for (let i=0;i<6;i++){ const sx = -L*.3 + i*L*.09; c.beginPath(); c.moveTo(sx, -h*.45); c.quadraticCurveTo(sx+L*.04, -h*.25, sx, -h*.08); c.stroke(); } }
-    if (f.pat==='band'){ c.fillRect(L*.25, -h*.5, L*.04, h*.55); }
-    if (f.pat==='scales'){ c.strokeStyle = acc; c.lineWidth = Math.max(1, h*.03); for (let r=0;r<3;r++) for (let i=0;i<6;i++){ c.beginPath(); c.arc(-L*.25 + i*L*.08 + (r%2)*L*.04, -h*.25 + r*h*.2, h*.1, -Math.PI/2, Math.PI/2); c.stroke(); } }
-    if (f.pat==='finlets'){ for (let i=0;i<6;i++){ c.beginPath(); c.moveTo(-L*.36 + i*L*.03, -h*.38); c.lineTo(-L*.35 + i*L*.03, -h*.5); c.lineTo(-L*.34 + i*L*.03, -h*.36); c.fill(); } c.fillRect(-L*.3, h*.05, L*.5, h*.05); }
-    c.restore();
-    c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = Math.max(1, L*.012);
-    c.beginPath(); c.arc(L*.2, 0, h*.35, -Math.PI*.4, Math.PI*.4); c.stroke();
-    c.fillStyle = '#fff'; c.beginPath(); c.arc(L*.3, -h*.1, h*.12, 0, Math.PI*2); c.fill();
-    c.fillStyle = '#111'; c.beginPath(); c.arc(L*.31, -h*.1, h*.065, 0, Math.PI*2); c.fill();
-    c.strokeStyle = 'rgba(0,0,0,.5)'; c.beginPath(); c.moveTo(L*.42, h*.08); c.lineTo(L*.36, h*.12); c.stroke();
-    if (f.barbels){ c.strokeStyle = acc; c.lineWidth = Math.max(1, L*.01); c.beginPath(); c.moveTo(L*.4, h*.12); c.quadraticCurveTo(L*.48, h*.4, L*.42, h*(f.legend?.9:.5)); c.moveTo(L*.38, h*.14); c.quadraticCurveTo(L*.4, h*.45, L*.33, h*(f.legend?.85:.55)); c.stroke(); }
-  }
-  c.restore();
-}
-
-/* ---------------- PANNELLI ---------------- */
-const overlay = document.getElementById('overlay'), panel = document.getElementById('panel');
-function openPanel(html, closable=true){
-  uiOpen = true; holding = false;
-  panel.innerHTML = (closable ? '<button class="close" id="xClose">✕</button>' : '') + html;
-  overlay.classList.add('show');
-  if (closable) document.getElementById('xClose').onclick = closePanel;
-  panel.scrollTop = 0;
-}
-function closePanel(){ overlay.classList.remove('show'); uiOpen = false; refreshHud(); }
-overlay.addEventListener('pointerdown', e => { if (e.target === overlay && S!=='caught' && save.seenIntro) closePanel(); });
-function fishCanvas(f, w, h, sil){
-  const c = document.createElement('canvas'); const d = Math.min(window.devicePixelRatio||1, 2);
-  c.width = w*d; c.height = h*d; const x = c.getContext('2d'); x.scale(d,d);
-  drawFish(x, w/2, h/2 + 4, w*.78, f, {sil}); return c;
-}
-function showCard(){
-  const a = save.album[fish.id];
-  const isNew = !a, isRecord = a && kg > a.best;
-  const value = Math.max(1, Math.round(kg * fish.price));
-  const relValue = Math.ceil(value / 2);
-  openPanel(`
-    <div class="card">
-      <div>${isNew ? '<span class="badge">NUOVO!</span>' : ''}${isRecord ? '<span class="badge red">RECORD!</span>' : ''}${fish.legend ? '<span class="badge">⭐ LEGGENDARIO ⭐</span>' : ''}</div>
-      <div id="cardFish"></div>
-      <h2>${fish.name}</h2>
-      ${fish.legend ? `<p><b>${HERO} ha preso il pesce leggendario!</b></p>` : isNew ? `<p>Nuova specie nell'album di ${HERO}!</p>` : ''}
-      <div class="kg">⚖️ ${kg.toLocaleString('it-IT')} kg &nbsp; · &nbsp; 🪙 ${value}</div>
-      <p>Carattere: <b>${BEHAVIOR[fish.beh].label}</b> · ${BEHAVIOR[fish.beh].desc}</p>
-      <p class="fact">💡 ${fish.fact}</p>
-      <div class="row">
-        <button class="big" id="keep">🧺 Tienilo (+${value} 🪙)</button>
-        <button class="big alt" id="free">💙 Liberalo (+${relValue} 🪙)</button>
-      </div>
-    </div>`, false);
-  document.getElementById('cardFish').appendChild(fishCanvas(fish, 360, 160));
-  const rec = () => { const e = save.album[fish.id] || {n:0, best:0}; e.n++; e.best = Math.max(e.best, kg); save.album[fish.id] = e; };
-  document.getElementById('keep').onclick = () => { rec(); save.coins += value; SFX.coin(); persist(); closePanel(); setState('idle'); say(`+${value} 🪙  Che pescata, ${HERO}!`); };
-  document.getElementById('free').onclick = () => { rec(); save.coins += relValue; save.released++; SFX.coin(); persist(); closePanel(); setState('idle'); say(`💙 Bravo ${HERO}! Il pesce torna a nuotare libero.`); };
-}
-function showAlbum(){
-  let caught = 0;
-  let html = '<h2>🐟 Album dei pesci</h2>';
-  PLACES.forEach(p => {
-    html += `<p><b>${p.name}</b>${save.places.includes(p.id) ? '' : ' 🔒'}</p><div class="grid">`;
-    p.fish.forEach(f => {
-      const a = save.album[f.id]; if (a) caught++;
-      html += `<div class="cell ${f.legend?'legend':''}" data-f="${f.id}"><div class="fc"></div><b>${a ? f.name : (f.legend ? '⭐ ???' : '???')}</b>${a ? `${BEHAVIOR[f.beh].label}<br>presi: ${a.n} · record: ${a.best.toLocaleString('it-IT')} kg` : '<br>&nbsp;'}</div>`;
-    });
-    html += '</div>';
-  });
-  html += `<p>Specie trovate: <b>${caught} / ${ALL_FISH.length}</b> &nbsp; · &nbsp; Pesci liberati: <b>${save.released}</b> 💙</p>`;
-  openPanel(html);
-  panel.querySelectorAll('.cell').forEach(el => {
-    const f = ALL_FISH.find(z => z.id === el.dataset.f);
-    el.querySelector('.fc').appendChild(fishCanvas(f, 150, 70, !save.album[f.id]));
-  });
-}
-function showShop(){
-  let html = '<h2>🛒 Negozio di pesca</h2><p>Spendi le monete per attrezzatura migliore!</p><div class="shop">';
-  Object.entries(UPGRADES).forEach(([k, u]) => {
-    const lv = save[k], max = u.costs.length - 1, next = lv < max ? u.costs[lv+1] : null;
-    html += `<div class="item"><div class="ico">${u.ico}</div><div class="txt"><b>${u.names[lv]}</b><br>${u.desc}
-      <div class="lv">${u.costs.map((_,i)=>`<i class="${i<=lv?'on':''}"></i>`).join('')}</div></div>
-      ${next !== null ? `<button class="big" data-k="${k}" ${save.coins < next ? 'disabled' : ''}>${u.names[lv+1]}<br>🪙 ${next}</button>` : '<b>MAX ⭐</b>'}</div>`;
-  });
-  html += '</div>';
-  openPanel(html);
-  panel.querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
-    const k = b.dataset.k, cost = UPGRADES[k].costs[save[k]+1];
-    if (save.coins < cost) return;
-    save.coins -= cost; save[k]++; persist(); SFX.win(); showShop(); refreshHud();
-  });
-}
-function showPlaces(){
-  let html = '<h2>🗺️ Dove andiamo a pescare?</h2><div class="places">';
-  PLACES.forEach(p => {
-    const has = save.places.includes(p.id), here = save.place === p.id;
-    html += `<div class="place"><div class="sky" style="background:linear-gradient(${p.sky[0]},${p.sky[1]} 55%,${p.water[0]} 56%,${p.water[1]})"></div>
-      <b>${p.name}</b>
-      ${here ? '<button class="big alt" disabled>Sei qui</button>'
-        : has ? `<button class="big" data-go="${p.id}">Vai!</button>`
-        : `<button class="big" data-buy="${p.id}" ${save.coins < p.cost ? 'disabled' : ''}>🔓 Sblocca 🪙 ${p.cost}</button>`}</div>`;
-  });
-  html += '</div>';
-  openPanel(html);
-  panel.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { save.place = b.dataset.go; persist(); buildEnv(place()); closePanel(); say(`Benvenuto: ${place().name}!`); });
-  panel.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => {
-    const p = PLACES.find(z => z.id === b.dataset.buy);
-    if (save.coins < p.cost) return;
-    save.coins -= p.cost; save.places.push(p.id); save.place = p.id; persist(); buildEnv(place()); SFX.win(); closePanel(); say(`Nuovo luogo sbloccato: ${p.name}! 🎉`, 3);
-  });
-}
-function showIntro(){
-  openPanel(`
-    <h2>🎣 Lenza d'Oro 3D</h2>
-    <p>Ciao <b>${HERO}</b>! Sei un giovane pescatore. Il tuo sogno? Diventare il più grande pescatore del mondo e catturare i <b>pesci leggendari</b>!</p>
-    <div class="steps">
-      <div class="step"><div class="e">👆</div><b>1. Lancia</b><br>Tieni premuto e <b>trascina a destra o sinistra</b> per mirare. Lascia quando la barra è piena: più lontano lanci, più trovi pesci rari!</div>
-      <div class="step"><div class="e">👀</div><b>2. Aspetta</b><br>Quando il galleggiante va <b>sotto</b> e compare il <b>!</b>, clicca subito!</div>
-      <div class="step"><div class="e">🌀</div><b>3. Recupera</b><br>Tieni premuto per tirare. Se la tensione va nel <b style="color:#e74c3c">rosso</b>, <b>molla</b> o si rompe il filo!</div>
-    </div>
-    <p><b>Le mosse dei pesci</b>: prima di ogni mossa compare un'icona.<br>
-      ⚡ <b>scappa</b> → molla &nbsp;·&nbsp; 🐬 <b>salta</b> → molla &nbsp;·&nbsp; ↩️ <b>ti viene incontro</b> → recupera veloce &nbsp;·&nbsp; ⬇️ <b>va sul fondo</b> → tieni con calma</p>
-    <div class="row"><button class="big" id="go">Iniziamo! 🐟</button></div>`, false);
-  document.getElementById('go').onclick = () => { save.seenIntro = true; persist(); audio(); closePanel(); };
-}
-
-const coinsEl = document.getElementById('coins');
-const hudBtns = ['bAlbum','bShop','bPlaces'].map(id => document.getElementById(id));
-function refreshHud(){ coinsEl.textContent = '🪙 ' + save.coins; document.getElementById('bSound').textContent = save.muted ? '🔇' : '🔊'; }
-function guard(fn){ return () => { if (S!=='idle'){ say('Finisci prima di pescare questo pesce! 🎣'); return; } fn(); }; }
-document.getElementById('bAlbum').onclick = guard(showAlbum);
-document.getElementById('bShop').onclick = guard(showShop);
-document.getElementById('bPlaces').onclick = guard(showPlaces);
-document.getElementById('bSound').onclick = () => { save.muted = !save.muted; persist(); refreshHud(); };
-/* ---------------- MUSICA DI SOTTOFONDO ----------------
-   Due copie del brano: quando una sta per finire parte l'altra,
-   e si incrociano con una dissolvenza (fade out / fade in). */
-const MUSIC_VOL = .18, FADE = 1.6;   // volume (0..1) e durata della dissolvenza in secondi
-const tracks = [0, 1].map(() => { const a = new Audio('assets/sigla.mp3'); a.preload = 'auto'; return { a, g:null }; });
-let cur = 0, musicStarted = false, musicTimer = null, routed = false;
-window.__music = tracks;   // per i test dal browser
-// su iPhone/iPad il volume si può cambiare solo passando dal mixer audio del browser
-function routeMusic(){
-  if (routed || location.protocol === 'file:') return;
-  const ctx = audio(); if (!ctx) return;
-  try {
-    tracks.forEach(t => { const src = ctx.createMediaElementSource(t.a); t.g = ctx.createGain(); t.g.gain.value = 0; src.connect(t.g).connect(ctx.destination); });
-    routed = true;
-  } catch(e){}
-}
-function setVol(t, v){ v = Math.max(0, Math.min(1, v)); if (t.g) t.g.gain.value = v; else t.a.volume = v; }
-function envelope(t){ const d = t.a.duration, x = t.a.currentTime; if (!d) return 0; return MUSIC_VOL * Math.min(1, x / FADE, (d - x) / FADE); }
-function musicTick(){
-  const A = tracks[cur], B = tracks[1 - cur];
-  setVol(A, envelope(A));
-  if (!B.a.paused) setVol(B, envelope(B));   // quella che sta sfumando via
-  const d = A.a.duration;
-  if (d && d - A.a.currentTime <= FADE && B.a.paused){   // sta per finire: parte l'altra copia da capo
-    B.a.currentTime = 0; setVol(B, 0); B.a.play().catch(() => {}); cur = 1 - cur;
-  }
-}
-function syncMusic(){
-  document.getElementById('bMusic').classList.toggle('off', !save.music);
-  if (save.music && musicStarted && !document.hidden){
-    routeMusic();
-    const A = tracks[cur];
-    if (A.a.paused){ setVol(A, envelope(A)); A.a.play().catch(() => {}); }
-    if (!musicTimer) musicTimer = setInterval(musicTick, 50);
-  } else {
-    tracks.forEach(t => t.a.pause());
-    clearInterval(musicTimer); musicTimer = null;
-  }
-}
-// i browser fanno partire l'audio solo dopo il primo tocco o tasto
-function firstTouch(){ if (musicStarted) return; musicStarted = true; syncMusic(); }
-window.addEventListener('pointerdown', firstTouch, true);
-window.addEventListener('keydown', firstTouch, true);
-document.addEventListener('visibilitychange', syncMusic);   // si ferma se cambi scheda
-document.getElementById('bMusic').onclick = () => { save.music = !save.music; persist(); musicStarted = true; syncMusic(); };
-syncMusic();
-document.querySelector('.hud').addEventListener('pointerdown', e => e.stopPropagation());
 
 /* ---------------- LOOP ---------------- */
 buildEnv(place());
@@ -1236,7 +965,7 @@ for (let i=0;i<14;i++){ const d = new THREE.Mesh(new THREE.CircleGeometry(.12, 1
 const aimRing = new THREE.Mesh(new THREE.RingGeometry(.9, 1.2, 28), new THREE.MeshBasicMaterial({ color:0xffd84a, transparent:true, opacity:.95, depthWrite:false }));
 aimRing.rotation.x = -Math.PI/2; scene.add(aimRing);
 function updateAim(dt){
-  if ((S === 'idle' || S === 'charge') && aimKeys && !uiOpen) aim = clamp(aim + aimKeys*dt*1.3, -1, 1);
+  if ((S === 'idle' || S === 'charge') && aimKeys && !UI.open) aim = clamp(aim + aimKeys*dt*1.3, -1, 1);
   const show = S === 'charge' || S === 'idle';
   aimDotMat.opacity = S === 'charge' ? .9 : .35;
   aimRing.material.opacity = S === 'charge' ? .95 : .35;
@@ -1252,7 +981,7 @@ function updateAim(dt){
 
 function step(dt){
   updateAim(dt);
-  if (!uiOpen || S === 'caught') update(uiOpen ? 0 : dt);
+  if (!UI.open || S === 'caught') update(UI.open ? 0 : dt);
   updateScene(dt);
   renderer.render(scene, camera);
   updateHud();
@@ -1263,12 +992,18 @@ function frame(t){
   if (!frozen) step(dt);
   requestAnimationFrame(frame);
 }
-refreshHud();
-if (!save.seenIntro) showIntro();
+initUI({
+  title: "Lenza d'Oro 3D",
+  state: () => S,
+  toIdle: () => setState('idle'),
+  say: (t, d) => say(t, d),
+  onOpen: () => { holding = false; },
+  onPlaceChange: () => buildEnv(place()),
+});
 requestAnimationFrame(frame);
 
 // aiuto per i test dal browser
-window.__game = { get state(){ return S; }, get R(){ return R; }, get fish(){ return fish; }, get kg(){ return kg; }, save,
+window.__game = { get state(){ return S; }, get spinT(){ return spinT; }, get R(){ return R; }, get fish(){ return fish; }, get kg(){ return kg; }, save,
   press, release, force(id){ forceFish = id; }, freeze(v){ frozen = v; }, setAim(v){ aim = v; }, get castTo(){ return castTo; }, tick(n=1){ for (let i=0;i<n;i++) step(1/60); } };
 </script>
 </body>
