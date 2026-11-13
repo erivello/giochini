@@ -16,6 +16,7 @@ try {
   if (s.car) Object.assign(save.car, s.car);
   if (typeof s.sound === 'boolean') save.sound = s.sound;
   if (s.stars) save.stars = s.stars | 0;
+  if (typeof s.tilt === 'boolean') save.tilt = s.tilt;
 } catch(e) {}
 function persist(){ try { localStorage.setItem(KEY, JSON.stringify(save)); } catch(e) {} }
 
@@ -297,25 +298,6 @@ const sfx = {
   whoosh(){ noise(0.5, 400, 3000, 0.25); },
 };
 
-/* motore continuo (strada, 3D) */
-let engine = null;
-function startEngine(){
-  const a = audio(); if (!a || engine) return;
-  const o = a.createOscillator(), o2 = a.createOscillator(), f = a.createBiquadFilter(), g = a.createGain();
-  o.type = 'sawtooth'; o2.type = 'square'; f.type = 'lowpass'; f.frequency.value = 500; g.gain.value = 0;
-  o.frequency.value = 60; o2.frequency.value = 30;
-  o.connect(f); o2.connect(f); f.connect(g).connect(a.destination); o.start(); o2.start();
-  engine = { o, o2, f, g };
-}
-function setEngine(v){
-  if (!engine || !ac) return;
-  const t = ac.currentTime;
-  engine.o.frequency.setTargetAtTime(55 + v * 95, t, 0.1);
-  engine.o2.frequency.setTargetAtTime(27 + v * 48, t, 0.1);
-  engine.f.frequency.setTargetAtTime(350 + v * 700, t, 0.1);
-  engine.g.gain.setTargetAtTime(0.025 + v * 0.045, t, 0.1);
-}
-function stopEngine(){ if (engine){ try { engine.o.stop(); engine.o2.stop(); } catch(e){} engine = null; } }
 document.addEventListener('visibilitychange', () => { if (!ac) return; document.hidden ? ac.suspend() : (save.sound && ac.resume()); if (document.hidden && window.speechSynthesis) speechSynthesis.cancel(); });
 
 /* voce */
@@ -395,7 +377,7 @@ function setupUI(){
     sb.addEventListener('click', e => {
       e.stopPropagation();
       save.sound = !save.sound; persist(); sync();
-      if (!save.sound){ stopEngine(); if (window.speechSynthesis) speechSynthesis.cancel(); if (ac) ac.suspend(); }
+      if (!save.sound){ if (window.speechSynthesis) speechSynthesis.cancel(); if (ac) ac.suspend(); }
       else { audio(); sfx.click(); B.onSoundOn && B.onSoundOn(); }
     });
   }
@@ -418,7 +400,7 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 const B = window.Brumme = {
   save, persist, COLORS, BODIES, WHEELS, FACES, colorHex, shade, randomCar, pick,
   rr, drawCar, drawWheel, drawFace, carHeight, INK,
-  audio, tone, noise, sfx, say, startEngine, setEngine, stopEngine,
+  audio, tone, noise, sfx, say,
   parts, burst, drawParts, fitCanvas, CONFETTI,
 };
 })();

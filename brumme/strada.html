@@ -55,7 +55,7 @@ function setLane(l){
   if (l !== lane){ lane = l; B.sfx.whoosh(); squashV = 4; }
 }
 cv.addEventListener('pointerdown', e => {
-  if (!started){ started = true; B.startEngine(); B.setEngine(0.45); }
+  started = true;
   const y = e.clientY, carX = W * 0.22, cy = laneGround(laneY);
   // tocco sulla macchinina = clacson
   if (Math.abs(e.clientX - carX) < 110 * carS && y > cy - B.carHeight(car) * carS && y < cy + 10){ honk(); return; }
@@ -67,9 +67,7 @@ function honk(){
   B.sfx.clacson(); happy = 1; hopV = -500;
   B.burst(W * 0.22, laneGround(laneY) - B.carHeight(car) * carS, { n:6, emoji:['🎵', '🎶'], size:30, speed:220, g:-60, life:1.1 });
 }
-$('horn').addEventListener('pointerdown', e => { e.stopPropagation(); if (!started){ started = true; B.startEngine(); B.setEngine(0.45); } honk(); });
-B.onSoundOn = () => { if (started){ B.startEngine(); B.setEngine(0.45); } };
-document.addEventListener('visibilitychange', () => { if (document.hidden) B.stopEngine(); else if (started){ B.startEngine(); B.setEngine(0.45); } });
+$('horn').addEventListener('pointerdown', e => { e.stopPropagation(); started = true; honk(); });
 
 /* ---------- oggetti sulla strada ---------- */
 const GOODIES = ['⭐', '⭐', '⭐', '🎈', '🍎', '🍌', '🍓', '🍒', '🍦'];
