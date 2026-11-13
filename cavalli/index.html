@@ -47,6 +47,8 @@ button{font-family:inherit;cursor:pointer;border:0}
 #hrHint{font-size:12px;font-weight:700;margin-left:auto}
 #mini{position:absolute;top:calc(10px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));width:120px;height:120px;background:var(--card);border-radius:16px;box-shadow:0 4px 14px rgba(0,0,0,.15)}
 #muteBtn{position:absolute;top:calc(138px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));pointer-events:auto;background:var(--card);border-radius:12px;font-size:18px;width:40px;height:40px;box-shadow:0 3px 10px rgba(0,0,0,.15)}
+#quitBtn{position:absolute;top:calc(234px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));pointer-events:auto;background:var(--card);border-radius:12px;font-size:18px;width:40px;height:40px;box-shadow:0 3px 10px rgba(0,0,0,.15)}   /* torna al menu */
+.homeLink{display:inline-block;margin-bottom:6px;font-weight:800;font-size:14px;color:var(--purple);text-decoration:none;background:#efe9fb;border-radius:999px;padding:3px 12px}
 #fullBtn{position:absolute;top:calc(186px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));pointer-events:auto;background:var(--card);border-radius:12px;font-size:18px;width:40px;height:40px;box-shadow:0 3px 10px rgba(0,0,0,.15)}   /* schermo intero, sotto l'audio */
 #gaitBox{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));background:var(--card);border-radius:16px;padding:6px 16px 8px;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.15);min-width:200px}
 #gaitName{font-weight:800;font-size:20px;color:var(--pink);line-height:1.1}
@@ -164,6 +166,7 @@ table.rank td.p{width:36px;font-size:20px;text-align:center}
   #mini{width:92px;height:92px}
   #muteBtn{top:calc(110px + env(safe-area-inset-top))}
   #fullBtn{top:calc(158px + env(safe-area-inset-top))}
+  #quitBtn{top:calc(206px + env(safe-area-inset-top))}
   #toast{font-size:15px;top:30%}
   .card h1{font-size:34px}
   .cats{grid-template-columns:1fr}
@@ -188,6 +191,7 @@ table.rank td.p{width:36px;font-size:20px;text-align:center}
   <div id="relaxCard" class="hidden"><div><b>🌲 Passeggiata relax</b></div><div>✨ Ferri d'oro: <b id="rxGot">0</b>/<span id="rxTot">25</span></div><div style="font-size:12px;color:#7a6f8f">Esplora la pineta e la spiaggia!</div><button id="rxExit" class="btn ghost">🏠 Esci</button></div>
   <canvas id="mini" width="240" height="240"></canvas>
   <button id="muteBtn" title="Audio">🔊</button>
+  <button id="quitBtn" title="Torna al menu" aria-label="Torna al menu">🏠</button>
   <div id="gaitBox">
     <div id="gaitName">Fermo</div>
     <div id="pips"><span></span><span></span><span></span><span></span></div>
@@ -244,6 +248,7 @@ table.rank td.p{width:36px;font-size:20px;text-align:center}
 
 <div id="menu" class="screen">
   <div class="card">
+    <a class="homeLink" href="../index.html">← Tutti i giochini</a>
     <h1>Agata <span>&amp;</span> Red</h1>
     <div class="sub">🏆 Coppa delle Regioni · Marina di Pisa</div>
     <div class="cats">
@@ -835,6 +840,17 @@ function updateRelaxHUD(){$('gaitName').textContent=GAITS[P.gait].name;[...$('pi
   $('kmh').textContent=Math.round(P.kmh)+' km/h';$('rxGot').textContent=RX.got;drawMiniRelax();}
 function updateRedStatus(){const c=Math.round(cleanFrac()*100),h=Math.round(ST.hap);
   $('redStatus').textContent=`❤️ Red: felicità ${h}% · ✨ pulizia ${c}%`+(prepLevel()>=0.6?' · pronto per la gara! 💪':' · passa in scuderia!');}
+function quitToMenu(){
+  if(mode==='relax'){leaveRelax();return;}
+  if(!['race','vet','countdown','vetResult'].includes(mode))return;
+  if(!confirm('Vuoi lasciare la gara e tornare al menu?'))return;
+  cdT=0;spots.forEach(s=>s.visible=false);MUD.forEach(m=>m.visible=false);shoeGroup.visible=false;ST.dirty=true;
+  for(const id of['vetTop','vetBottom','count','vres','touch'])show(id,false);
+  show('gaitBox',true);show('panel',true);$('toast').classList.remove('show');toastT=0;
+  goMenu();
+}
+$('quitBtn').addEventListener('click',quitToMenu);
+addEventListener('keydown',e=>{if(e.key==='Escape')quitToMenu();});
 function goMenu(){mode='menu';camInit=false;show('hud',false);show('relaxCard',false);show('menu',true);updateRedStatus();}
 $('goStable').addEventListener('click',enterStable);
 $('goRelax').addEventListener('click',startRelax);
@@ -1165,7 +1181,7 @@ function updateHUD(){
   if(C.type==='reg'&&mode==='race'){
     const ok=P.km>0.3;const avg=ok?phaseAvg():0;
     const col=!ok?'#7a6f8f':avg>C.vmax+0.5||avg<C.vmin?'var(--bad)':avg>C.vmax?'var(--warn)':'var(--ok)';
-    $('avgTxt').innerHTML=`Media <span style="color:${col}">${ok?it(avg,1):'—'}</span> <small>${C.vmin}–${C.vmax} km/h</small>`;
+    $('avgTxt').innerHTML=`Media <span style="color:${col}">${ok?it(avg,1):'—'}</span> <small id="avgWin">${C.vmin}–${C.vmax} km/h</small>`;
     const lo=C.vmin-2,hi=C.vmax+2.5;$('gMark').style.left=clamp((avg-lo)/(hi-lo)*100,0,100)+'%';$('gMark').style.opacity=ok?1:0.3;
   }
   if(mode==='vet'){const m=vetMinutes();$('vTime').textContent=Math.floor(m);$('vTimeFill').style.width=clamp(m/15*100,0,100)+'%';
