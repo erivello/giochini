@@ -2,7 +2,12 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0f2233">
+<!-- aperto dall'icona sulla schermata Home: a tutto schermo, senza barre del browser -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Lenza d'Oro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +21,7 @@
   html,body{margin:0;height:100%;background:#0f2233;color:var(--ink);font-family:var(--font);overflow:hidden;
     -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
   #wrap{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-    width:min(100vw,calc(100vh*16/9));aspect-ratio:16/9;overflow:hidden;border-radius:6px;box-shadow:0 10px 40px #0008}
+    width:min(100vw,calc(100vh*16/9));width:min(100vw,calc(100dvh*16/9));aspect-ratio:16/9;   /* dvh = altezza davvero visibile sui telefoni */overflow:hidden;border-radius:6px;box-shadow:0 10px 40px #0008}
   canvas#c{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block;cursor:pointer}
   .hud{position:absolute;top:1.6%;left:1.4%;right:1.4%;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;gap:8px}
   .pill{pointer-events:auto;background:var(--paper);border:3px solid var(--ink);border-radius:999px;padding:2px 14px;
@@ -85,6 +90,7 @@
       <a class="hb" href="3d.html" style="text-decoration:none;color:var(--ink);font-weight:800">3D</a>
       <button class="hb" id="bMusic" title="Musica">🎵</button>
       <button class="hb" id="bSound" title="Effetti sonori">🔊</button>
+      <button class="hb" id="bFull" title="Schermo intero">⛶</button>
       <button class="hb" id="bReset" title="Ricomincia da zero">🔄</button>
     </div>
   </div>

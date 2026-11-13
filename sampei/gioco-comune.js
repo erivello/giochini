@@ -341,6 +341,20 @@ let GAME = null;
   .tcard:disabled{cursor:not-allowed}
   .likes{font-size:13px;color:#456}
   .panel h3{margin:10px 0 2px;font-size:clamp(16px,2.4vw,22px)}
+  #rotate{position:fixed;inset:0;z-index:50;background:#0f2233;color:#fff;display:none;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;font-family:var(--font);font-weight:800;font-size:24px;padding:24px;gap:12px}
+  #rotate .phone{font-size:72px;animation:turn 1.6s ease-in-out infinite}
+  @keyframes turn{0%,20%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+  @media (orientation:portrait) and (pointer:coarse){ #rotate{display:flex} }
+  /* telefoni in orizzontale: interfaccia più compatta */
+  @media (max-height:460px){
+    .hb{padding:0 7px;font-size:13px;border-width:2px;border-radius:10px;box-shadow:0 2px 0 var(--ink)}
+    .pill{padding:0 10px;font-size:14px;border-width:2px;box-shadow:0 2px 0 var(--ink)}
+    #bTech{white-space:nowrap;font-size:12px}
+    .btns{gap:4px}
+    #msg{font-size:13px;padding:2px 12px}
+    .panel{padding:8px 12px}
+  }
   `;
   document.head.appendChild(st);
 })();
@@ -591,6 +605,36 @@ function syncMusic(){
   }
 }
 
+/* ---------------- SCHERMO INTERO E ORIZZONTALE (telefoni) ----------------
+   Su Android il gioco va a tutto schermo e si gira in orizzontale.
+   Su iPhone il browser non lo permette: si usa l'icona sulla schermata Home. */
+const canFull = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+const isTouch = matchMedia('(pointer:coarse)').matches;
+function isFull(){ return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+function enterFull(){
+  const el = document.documentElement;
+  const req = el.requestFullscreen ? el.requestFullscreen() : el.webkitRequestFullscreen && el.webkitRequestFullscreen();
+  Promise.resolve(req).then(() => { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {}); }).catch(() => {});
+}
+function exitFull(){ if (document.exitFullscreen) document.exitFullscreen().catch(() => {}); else if (document.webkitExitFullscreen) document.webkitExitFullscreen(); }
+function setupFullscreen(){
+  const btn = document.getElementById('bFull');
+  if (!canFull){ btn.style.display = 'none'; }
+  else btn.onclick = () => isFull() ? exitFull() : enterFull();
+  const sync = () => { btn.textContent = isFull() ? '🗗' : '⛶'; };
+  document.addEventListener('fullscreenchange', sync); document.addEventListener('webkitfullscreenchange', sync);
+  // avviso per girare il telefono (si vede solo in verticale sui telefoni)
+  const rot = document.createElement('div'); rot.id = 'rotate';
+  rot.innerHTML = '<div class="phone">📱</div><div>Gira il telefono in orizzontale</div>' + (canFull ? '<button class="big" id="rotFull">⛶ Gioca a tutto schermo</button>' : '');
+  document.body.appendChild(rot);
+  if (canFull) document.getElementById('rotFull').onclick = enterFull;
+  // sui telefoni Android: al primo tocco va da solo a tutto schermo
+  if (isTouch && canFull){
+    const once = () => { window.removeEventListener('pointerup', once, true); if (!isFull()) enterFull(); };
+    window.addEventListener('pointerup', once, true);
+  }
+}
+
 /* ---------------- AVVIO ---------------- */
 function initUI(game){
   GAME = game;
@@ -613,6 +657,7 @@ function initUI(game){
   document.addEventListener('visibilitychange', syncMusic);   // si ferma se cambi scheda
   document.getElementById('bMusic').onclick = () => { save.music = !save.music; persist(); musicStarted = true; syncMusic(); };
   syncMusic();
+  setupFullscreen();
   refreshHud();
   if (!save.seenIntro) showIntro();
   else if (save.refunded){ delete save.refunded; persist(); GAME.say('🪙 Il negozio è cambiato: ti ho restituito le monete delle vecchie esche. Ora ci sono tecniche ed esche nuove!', 5); }
