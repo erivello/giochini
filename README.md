@@ -27,5 +27,6 @@ e poi apri http://localhost:8123
 1. Crea una cartella nuova (per esempio `astronavi/`) con dentro il suo `index.html`.
 2. Aggiungi la sua scheda in `index.html` e una riga nella tabella qui sopra.
 3. Usa nel gioco una chiave di salvataggio tutta sua (`localStorage`), così i progressi non si mescolano con gli altri giochi.
+4. Per il telefono, includi in fondo alla pagina `<script src="../schermo-intero.js" data-after="idDelPulsanteAudio"></script>`: aggiunge il pulsante ⛶ accanto a quello indicato e, su Android, va a tutto schermo al primo tocco. Nel `<head>` metti anche i tag `apple-mobile-web-app-capable` e `mobile-web-app-capable`, per aprire il gioco a tutto schermo dall'icona sulla schermata Home (vedi `cavalli/index.html`).
 
 La storia dei commit di ogni gioco è stata conservata quando è stato spostato qui (veniva dai repository `erivello/sampei` ed `erivello/agata`).

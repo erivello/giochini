@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<!-- aperto dall'icona sulla schermata Home: a tutto schermo, senza barre del browser -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Agata e Red</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
@@ -39,6 +43,7 @@ button{font-family:inherit;cursor:pointer;border:0}
 #hrHint{font-size:12px;font-weight:700;margin-left:auto}
 #mini{position:absolute;top:calc(10px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));width:120px;height:120px;background:var(--card);border-radius:16px;box-shadow:0 4px 14px rgba(0,0,0,.15)}
 #muteBtn{position:absolute;top:calc(138px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));pointer-events:auto;background:var(--card);border-radius:12px;font-size:18px;width:40px;height:40px;box-shadow:0 3px 10px rgba(0,0,0,.15)}
+#fullBtn{position:absolute;top:calc(186px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));pointer-events:auto;background:var(--card);border-radius:12px;font-size:18px;width:40px;height:40px;box-shadow:0 3px 10px rgba(0,0,0,.15)}   /* schermo intero, sotto l'audio */
 #gaitBox{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));background:var(--card);border-radius:16px;padding:6px 16px 8px;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.15);min-width:200px}
 #gaitName{font-weight:800;font-size:20px;color:var(--pink);line-height:1.1}
 #pips{display:flex;gap:5px;justify-content:center;margin:5px 0 2px}
@@ -154,6 +159,7 @@ table.rank td.p{width:36px;font-size:20px;text-align:center}
   .heart b{font-size:22px}
   #mini{width:92px;height:92px}
   #muteBtn{top:calc(110px + env(safe-area-inset-top))}
+  #fullBtn{top:calc(158px + env(safe-area-inset-top))}
   #toast{font-size:15px;top:30%}
   .card h1{font-size:34px}
   .cats{grid-template-columns:1fr}
@@ -1195,5 +1201,6 @@ updateRedStatus();
 requestAnimationFrame(frame);
 })();
 </script>
+<script src="../schermo-intero.js" data-after="muteBtn"></script>
 </body>
 </html>
